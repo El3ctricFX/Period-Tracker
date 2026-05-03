@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Cycle Compass · Mobile + Tablet + Desktop</title>
+    <title>Cycle Dashboard · Compact Timeline + X Delete</title>
     <style>
         :root {
             --bg: #05070a;
@@ -18,22 +18,18 @@
             --luteal: #bc8cff;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            background: var(--bg);
+            background-color: var(--bg);
             color: var(--text-main);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             margin: 0;
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* --- SIDEBAR (desktop: fixed height, buttons at bottom) --- */
+        /* --- SIDEBAR (desktop) --- */
         aside {
             width: 300px;
             background: var(--sidebar);
@@ -49,29 +45,14 @@
             padding: 40px 25px 20px 25px;
         }
 
-        .section-label {
-            font-weight: 800;
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-            text-transform: uppercase;
+        .section-label { 
+            font-weight: 800; font-size: 0.7rem; color: var(--text-dim); 
+            letter-spacing: 2px; margin-bottom: 30px; text-transform: uppercase;
         }
-
+        
         .stat-group { margin-bottom: 35px; }
-        .stat-label {
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .stat-value {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
+        .stat-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
 
         .nav-tools {
             padding: 25px 25px 35px;
@@ -81,268 +62,164 @@
             flex-direction: column;
             gap: 12px;
         }
-
-        .tool-btn {
-            background: var(--card);
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-            padding: 12px 16px;
-            border-radius: 14px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .tool-btn { 
+            background: var(--card); border: 1px solid var(--border); color: var(--text-dim); 
+            padding: 12px 16px; border-radius: 14px; cursor: pointer; font-size: 0.75rem; transition: 0.2s;
+            text-align: left; font-weight: 600;
             width: 100%;
-            text-align: left;
-            transition: 0.2s;
         }
-        .tool-btn:hover {
-            border-color: var(--accent-blue);
-            color: var(--text-main);
-            background: rgba(0,210,255,0.08);
-        }
+        .tool-btn:hover { border-color: var(--accent-blue); color: var(--text-main); background: rgba(0,210,255,0.08); }
 
-        /* --- MAIN CONTENT --- */
-        main {
-            flex: 1;
-            padding: 40px 50px;
-            overflow-y: auto;
-            min-width: 0;
-        }
+        /* --- MAIN DASHBOARD (compact) --- */
+        main { flex: 1; padding: 40px 50px; overflow-y: auto; min-width: 0; }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 30px; margin-bottom: 40px; }
 
         .status-hero {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 40px;
+            background: var(--card); border: 1px solid var(--border); border-radius: 28px;
+            padding: 40px; display: flex; flex-direction: column;
         }
 
-        .hero-top {
-            display: flex;
-            align-items: center;
-            gap: 35px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
+        .hero-top { display: flex; align-items: center; gap: 35px; margin-bottom: 30px; flex-wrap: wrap; }
 
         .phase-indicator {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 3px solid var(--phase-color, var(--accent-blue));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            color: var(--phase-color);
+            width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--phase-color, var(--accent-blue));
+            display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: var(--phase-color);
             box-shadow: 0 0 20px rgba(0,0,0,0.4), 0 0 10px var(--phase-color);
             flex-shrink: 0;
         }
 
-        .status-text h2 {
-            font-size: 3.2rem;
-            margin: 0;
-            letter-spacing: -1.5px;
+        .status-text h2 { font-size: 3.2rem; margin: 0; letter-spacing: -1.5px; }
+        .status-text p { color: var(--text-dim); margin: 12px 0 20px; font-size: 1.1rem; font-weight: 500; }
+        
+        .bio-marker { 
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.4); padding: 10px 18px; border-radius: 40px; 
+            font-size: 0.75rem; font-weight: 800; color: var(--phase-color);
+            border: 1px solid var(--phase-color); text-transform: uppercase; letter-spacing: 1.2px;
+            cursor: pointer; transition: 0.2s;
         }
-        .status-text p {
-            color: var(--text-dim);
-            margin: 12px 0 20px;
-            font-size: 1.1rem;
-        }
+        .bio-marker:hover { background: var(--phase-color); color: #000; transform: translateY(-1px); }
 
-        .bio-marker {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0,0,0,0.4);
-            padding: 10px 18px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: var(--phase-color);
-            border: 1px solid var(--phase-color);
-            cursor: pointer;
-        }
-
-        .prediction-strip {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 25px 0;
-            border-top: 1px solid var(--border);
+        .prediction-strip { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
+            padding: 25px 0; border-top: 1px solid var(--border);
         }
         .pred-box { display: flex; flex-direction: column; gap: 6px; }
-        .pred-label {
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-        .pred-date {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
+        .pred-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .pred-date { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
 
-        /* timeline (scrollable) */
+        /* --- COMPACT TIMELINE (tighter spacing, smaller dots) --- */
         .timeline-container {
-            padding-top: 25px;
+            padding-top: 20px;
             border-top: 1px solid var(--border);
         }
         .timeline-track {
             display: flex;
-            gap: 1.2rem;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            scrollbar-width: thin;
+            justify-content: space-between;
+            position: relative;
+            gap: 8px;
+        }
+        .timeline-track::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 1;
         }
         .timeline-point {
-            min-width: 85px;
+            position: relative;
+            z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            position: relative;
+            width: 80px;
+            flex-shrink: 0;
         }
         .dot {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             background: var(--card);
             border: 2px solid var(--border);
             border-radius: 50%;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .timeline-point.active .dot {
             background: var(--dot-color);
             border-color: var(--dot-color);
-            box-shadow: 0 0 15px var(--dot-color);
+            box-shadow: 0 0 12px var(--dot-color);
         }
-        .tp-label {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            font-weight: 800;
-            color: var(--text-dim);
+        .timeline-point.passed .dot {
+            background: var(--dot-color);
+            border-color: var(--dot-color);
+            opacity: 0.3;
         }
-        .tp-date {
-            font-size: 0.7rem;
-            color: var(--text-main);
-            margin-top: 4px;
-            white-space: nowrap;
-        }
+        .tp-label { font-size: 0.55rem; text-transform: uppercase; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px; }
+        .tp-date { font-size: 0.65rem; color: var(--text-main); margin-top: 4px; white-space: nowrap; }
 
-        .log-panel {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 30px;
-        }
-        label {
-            display: block;
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
+        .log-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 30px; }
+        label { display: block; font-size: 0.65rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; }
         input[type="date"] {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 14px;
-            border-radius: 14px;
-            font-family: inherit;
-            margin-bottom: 15px;
+            width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 14px; font-family: inherit; font-size: 0.9rem; margin-bottom: 15px;
         }
-        .btn-action {
-            width: 100%;
-            background: var(--accent-blue);
-            color: black;
-            border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            text-transform: uppercase;
-            margin-top: 10px;
+        .btn-action { 
+            width: 100%; background: var(--accent-blue); color: #000; border: none; padding: 16px; 
+            border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; margin-top: 10px;
         }
         .btn-end { background: var(--neon-pink); color: white; }
 
         #insightCard {
-            display: none;
-            background: var(--card);
-            border: 1px solid var(--phase-color);
-            border-radius: 28px;
-            padding: 30px;
-            margin-top: 20px;
+            display: none; background: var(--card); border: 1px solid var(--phase-color); 
+            border-radius: 28px; padding: 30px; margin-top: 20px; animation: slideUp 0.3s ease;
         }
-        .insight-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-top: 20px;
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+        .insight-item b { display: block; font-size: 0.7rem; color: var(--phase-color); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .insight-item p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; padding: 15px; border-bottom: 1px solid var(--border); }
+        td { padding: 18px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .date-range { font-weight: 600; color: var(--text-main); }
+        .status-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); }
+
+        /* Compact X delete button */
+        .delete-x {
+            background: rgba(255,45,117,0.2);
+            border: 1px solid var(--neon-pink);
+            color: var(--neon-pink);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
         }
-        .insight-item b {
-            display: block;
-            font-size: 0.7rem;
-            color: var(--phase-color);
-            text-transform: uppercase;
-            margin-bottom: 8px;
+        .delete-x:hover {
+            background: var(--neon-pink);
+            color: #000;
+            transform: scale(1.02);
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            text-align: left;
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-        th {
-            color: var(--text-dim);
-            font-size: 0.65rem;
-            text-transform: uppercase;
-        }
-
-        /* JSON Terminal – hidden by default, no auto‑open */
         #jsonTerminal {
-            position: fixed;
-            right: -500px;
-            top: 0;
-            width: 450px;
-            height: 100%;
-            background: #06090f;
-            border-left: 1px solid var(--border);
-            padding: 30px;
-            transition: 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            z-index: 1000;
+            position: fixed; right: -500px; top: 0; width: 450px; height: 100%;
+            background: #06090f; border-left: 1px solid var(--border); padding: 30px;
+            transition: 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1); z-index: 1000;
             box-shadow: -10px 0 25px rgba(0,0,0,0.5);
         }
         #jsonTerminal.open { right: 0; }
-        textarea {
-            width: 100%;
-            height: 70%;
-            background: #0a0c12;
-            border: 1px solid #2a2f3a;
-            color: var(--accent-blue);
-            padding: 18px;
-            font-family: monospace;
-            border-radius: 18px;
-            resize: vertical;
-        }
+        textarea { width: 100%; height: 70%; background: #0a0c12; border: 1px solid #2a2f3a; color: var(--accent-blue); padding: 18px; font-family: monospace; border-radius: 18px; resize: vertical; }
 
-        /* hidden file input */
         #importFileInput { display: none; }
-
-        /* toast message */
         .toast-msg {
             position: fixed;
             bottom: 25px;
@@ -361,7 +238,7 @@
             100% { opacity: 0; transform: translateX(-50%) translateY(20px); visibility: hidden; }
         }
 
-        /* --- TABLET & MOBILE: breakpoint at 1024px to cover iPads --- */
+        /* --- MOBILE & TABLET (breakpoint 1024px) --- */
         @media (max-width: 1024px) {
             body {
                 flex-direction: column;
@@ -421,22 +298,17 @@
             .phase-indicator { width: 70px; height: 70px; font-size: 1.8rem; }
             .status-text h2 { font-size: 2rem; }
             .pred-date { font-size: 0.9rem; }
-            .timeline-point { min-width: 70px; }
-            .tp-date { white-space: normal; font-size: 0.6rem; }
+            .timeline-point { width: 70px; }
+            .tp-date { white-space: normal; font-size: 0.55rem; }
             .insight-grid { grid-template-columns: 1fr; }
-            #jsonTerminal {
-                width: 90%;
-                right: -90%;
-                padding: 24px;
-            }
+            #jsonTerminal { width: 90%; right: -90%; }
             #jsonTerminal.open { right: 0; }
         }
-
-        /* Small phones */
         @media (max-width: 480px) {
             .phase-indicator { width: 58px; height: 58px; }
             .status-text h2 { font-size: 1.6rem; }
-            .timeline-point { min-width: 62px; }
+            .timeline-point { width: 60px; }
+            .tp-label { font-size: 0.5rem; }
         }
     </style>
 </head>
@@ -444,7 +316,7 @@
 
 <aside>
     <div class="stats-scroll">
-        <div class="section-label">Cycle averages</div>
+        <div class="section-label">Averages</div>
         <div class="stat-group"><span class="stat-label">Full Cycle</span><div class="stat-value" id="avgCycle">--</div></div>
         <div class="stat-group"><span class="stat-label">Period Duration</span><div class="stat-value" id="avgDuration">--</div></div>
     </div>
@@ -453,7 +325,7 @@
         <button class="tool-btn" onclick="exportData()">⬇️ Export Backup</button>
         <button class="tool-btn" id="importBtnTrigger">📂 Import Backup</button>
         <input type="file" id="importFileInput" accept="application/json">
-        <button class="tool-btn" onclick="clearAllData()" style="color:#ff8a7a;">⟳ Reset All Data</button>
+        <button class="tool-btn" onclick="clearAllData()" style="color:#ff8a7a;">⟳ Reset All</button>
     </div>
 </aside>
 
@@ -489,8 +361,8 @@
 
     <div id="insightCard">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
-            <h3 id="insightTitle" style="margin:0;">Phase Insights</h3>
-            <button onclick="toggleInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:6px 14px; border-radius:40px;">CLOSE</button>
+            <h3 id="insightTitle" style="margin:0; font-size:1.3rem;">Phase Insights</h3>
+            <button onclick="toggleInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:5px 12px; border-radius:6px;">CLOSE ✕</button>
         </div>
         <div class="insight-grid">
             <div class="insight-item"><b>Mood & Mind</b><p id="moodText"></p></div>
@@ -523,15 +395,35 @@
     let currentPhaseKey = 'MENSTRUAL';
 
     const PHASES = {
-        MENSTRUAL: { name: 'Menstrual Phase', color: 'var(--neon-pink)', icon: '☾', hormone: 'Progesterone Drop',
-            mood: 'Turning inward, reflective.', energy: 'Lowest point. Rest needed.', body: 'Cramping possible.', activity: 'Light stretching, journaling.' },
-        FOLLICULAR: { name: 'Follicular Phase', color: 'var(--accent-blue)', icon: '☽', hormone: 'Estrogen Rising',
-            mood: 'Outgoing, creative.', energy: 'Building steadily.', body: 'Skin starts to glow.', activity: 'New projects, cardio.' },
-        OVULATORY: { name: 'Ovulatory Phase', color: 'var(--ovulation)', icon: '○', hormone: 'LH Surge',
-            mood: 'Confident, social.', energy: 'Peak performance.', body: 'High libido, clear skin.', activity: 'Public speaking, heavy workouts.' },
-        LUTEAL: { name: 'Luteal Phase', color: 'var(--luteal)', icon: '◑', hormone: 'Progesterone Peak',
-            mood: 'Nesting, detail-oriented.', energy: 'Waning.', body: 'Oily skin, cravings.', activity: 'Organizing, strength training.' },
-        LATE: { name: 'Late Cycle', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed', mood: 'Patience.', energy: 'Variable.', body: 'Bloating.', activity: 'Hydrate & rest.' }
+        MENSTRUAL: { 
+            name: 'Menstrual Phase', color: 'var(--neon-pink)', icon: '☾', hormone: 'Progesterone Drop',
+            mood: 'Turning inward, reflective, sometimes emotional.',
+            energy: 'Lowest point. Your body needs rest and warmth.',
+            body: 'Cramping or bloating. Skin may be sensitive.',
+            activity: 'Light stretching, journaling, and early nights.'
+        },
+        FOLLICULAR: { 
+            name: 'Follicular Phase', color: 'var(--accent-blue)', icon: '☽', hormone: 'Estrogen Rising',
+            mood: 'Outgoing, creative, and mentally sharp.',
+            energy: 'Building steadily. You feel lighter and more capable.',
+            body: 'Skin starts to glow. Metabolism is slightly slower.',
+            activity: 'Starting new projects, social events, and cardio.'
+        },
+        OVULATORY: { 
+            name: 'Ovulatory Phase', color: 'var(--ovulation)', icon: '○', hormone: 'LH Surge',
+            mood: 'Confident, flirtatious, and high communication.',
+            energy: 'Peak performance. You can handle high intensity.',
+            body: 'High libido. Peak fertility. Clear, bright skin.',
+            activity: 'Public speaking, heavy lifting, and social networking.'
+        },
+        LUTEAL: { 
+            name: 'Luteal Phase', color: 'var(--luteal)', icon: '◑', hormone: 'Progesterone Peak',
+            mood: 'Nesting, detail-oriented, but possibly irritable.',
+            energy: 'Waning. You might feel "foggy" or easily winded.',
+            body: 'Oily skin or breakouts. Increased appetite.',
+            activity: 'Organizing, deep cleaning, and strength training.'
+        },
+        LATE: { name: 'Late Cycle', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed Cycle', mood: 'Uncertainty, patience.', energy: 'Varies, low resilience.', body: 'Bloating, waiting.', activity: 'Hydration, light walks.' }
     };
 
     function showToast(msg, isError = false) {
@@ -544,7 +436,6 @@
         setTimeout(() => toast.remove(), 2000);
     }
 
-    // --- IMPORT / EXPORT (simple for non‑tech users) ---
     document.getElementById('importBtnTrigger').addEventListener('click', () => {
         document.getElementById('importFileInput').click();
     });
@@ -558,10 +449,10 @@
                 if (Array.isArray(imported)) {
                     logs = imported;
                     save();
-                    showToast(`✅ Imported ${logs.length} cycle entries!`);
+                    showToast(`✅ Imported ${logs.length} cycles`);
                 } else throw new Error();
             } catch (err) {
-                showToast("❌ Invalid backup file.", true);
+                showToast("❌ Invalid backup file", true);
             }
             e.target.value = '';
         };
@@ -569,8 +460,7 @@
     });
 
     function exportData() {
-        const dataStr = JSON.stringify(logs, null, 2);
-        const blob = new Blob([dataStr], {type: "application/json"});
+        const blob = new Blob([JSON.stringify(logs, null, 2)], {type: "application/json"});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = "cycle_backup.json";
@@ -609,7 +499,7 @@
 
     function logEntry() {
         const start = document.getElementById('startInput').value;
-        if (!start) { showToast("Please select a start date.", true); return; }
+        if (!start) { showToast("Select a start date", true); return; }
         const end = document.getElementById('endInput').value || null;
         logs.unshift({ id: Date.now(), start, end });
         logs.sort((a, b) => new Date(b.start) - new Date(a.start));
@@ -621,7 +511,7 @@
 
     function updateLatest() {
         const end = document.getElementById('endInput').value;
-        if (!end) { showToast("Select an end date.", true); return; }
+        if (!end) { showToast("Select an end date", true); return; }
         if (logs.length === 0) return;
         logs[0].end = end;
         save();
@@ -778,13 +668,14 @@
                 <td class="date-range">${formatDate(log.start)} — ${formatDate(log.end)}</td>
                 <td>${durDays}</td>
                 <td><span class="status-tag" style="color:${log.end ? 'var(--text-dim)' : 'var(--neon-pink)'}">${log.end ? 'Finished' : 'Active'}</span></td>
-                <td style="text-align:right;"><button onclick="deleteEntry(${log.id})" style="background:none; border:1px solid var(--border); border-radius:40px; padding:4px 10px;">✕</button></td>
+                <td style="text-align:right;">
+                    <button class="delete-x" onclick="deleteEntry(${log.id})" title="Delete">✕</button>
+                </td>
             `;
             logContainer.appendChild(row);
         });
     }
 
-    // ensure terminal is hidden on page load
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('jsonTerminal').classList.remove('open');
         updateUI();
