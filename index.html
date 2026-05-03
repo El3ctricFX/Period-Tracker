@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cycle Dashboard</title>
+    <style>
+        :root {
+            --bg: #05070a;
+            --sidebar: #0a0d14;
+            --card: #0f141e;
+            --border: #1e2533;
+            --text-main: #e6edf3;
+            --text-dim: #8b949e;
+            --accent-blue: #00d2ff;
+            --neon-pink: #ff2d75;
+            --ovulation: #00ffaa;
+            --luteal: #bc8cff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        aside {
+            width: 300px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            padding: 40px 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-label { 
+            font-weight: 800; font-size: 0.7rem; color: var(--text-dim); 
+            letter-spacing: 2px; margin-bottom: 30px; text-transform: uppercase;
+        }
+        
+        .stat-group { margin-bottom: 35px; }
+        .stat-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
+
+        .nav-tools { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+        .tool-btn { 
+            background: var(--card); border: 1px solid var(--border); color: var(--text-dim); 
+            padding: 12px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; transition: 0.2s;
+            text-align: left; font-weight: 600;
+        }
+        .tool-btn:hover { border-color: var(--accent-blue); color: var(--text-main); }
+
+        /* --- MAIN DASHBOARD --- */
+        main { flex: 1; padding: 40px 50px; overflow-y: auto; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 30px; margin-bottom: 40px; }
+
+        .status-hero {
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px;
+            padding: 40px; display: flex; flex-direction: column; position: relative;
+        }
+
+        .hero-top { display: flex; align-items: center; gap: 35px; margin-bottom: 30px; }
+
+        .phase-indicator {
+            width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--phase-color, var(--accent-blue));
+            display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: var(--phase-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.4), 0 0 10px var(--phase-color);
+            flex-shrink: 0;
+            transition: 0.3s;
+        }
+
+        .status-text h2 { font-size: 3.2rem; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
+        .status-text p { color: var(--text-dim); margin: 12px 0 20px; font-size: 1.1rem; font-weight: 500; }
+        
+        .bio-marker { 
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.4); padding: 10px 18px; border-radius: 10px; 
+            font-size: 0.75rem; font-weight: 800; color: var(--phase-color);
+            border: 1px solid var(--phase-color); text-transform: uppercase; letter-spacing: 1.2px;
+            cursor: pointer; transition: 0.2s; margin-bottom: 5px;
+        }
+        .bio-marker:hover { background: var(--phase-color); color: #000; transform: translateY(-1px); }
+
+        /* --- PREDICTION STRIP --- */
+        .prediction-strip { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
+            padding: 25px 0; border-top: 1px solid var(--border);
+        }
+        .pred-box { display: flex; flex-direction: column; gap: 6px; }
+        .pred-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .pred-date { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+
+        /* --- VISUAL TIMELINE --- */
+        .timeline-container {
+            padding-top: 25px;
+            border-top: 1px solid var(--border);
+        }
+        .timeline-track {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+        .timeline-track::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 1;
+        }
+        .timeline-point {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100px;
+        }
+        .dot {
+            width: 20px;
+            height: 20px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            margin-bottom: 12px;
+            transition: 0.3s;
+        }
+        .timeline-point.active .dot {
+            background: var(--dot-color);
+            border-color: var(--dot-color);
+            box-shadow: 0 0 15px var(--dot-color);
+        }
+        .timeline-point.passed .dot {
+            background: var(--dot-color);
+            border-color: var(--dot-color);
+            opacity: 0.3;
+        }
+        .tp-label { font-size: 0.6rem; text-transform: uppercase; font-weight: 800; color: var(--text-dim); letter-spacing: 1px; }
+        .tp-date { font-size: 0.7rem; color: var(--text-main); margin-top: 4px; white-space: nowrap; }
+
+        /* --- PANELS --- */
+        .log-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; }
+        label { display: block; font-size: 0.65rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; }
+        input[type="date"] {
+            width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 10px; font-family: inherit; font-size: 0.9rem; margin-bottom: 15px;
+        }
+        .btn-action { 
+            width: 100%; background: var(--accent-blue); color: #000; border: none; padding: 16px; 
+            border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; margin-top: 10px;
+        }
+        .btn-end { background: var(--neon-pink); color: white; }
+
+        #insightCard {
+            display: none; background: var(--card); border: 1px solid var(--phase-color); 
+            border-radius: 20px; padding: 30px; margin-top: 20px; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+        .insight-item b { display: block; font-size: 0.7rem; color: var(--phase-color); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+        .insight-item p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; padding: 15px; border-bottom: 1px solid var(--border); }
+        td { padding: 22px 15px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .date-range { font-weight: 600; color: var(--text-main); }
+        .status-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); }
+
+        #jsonTerminal {
+            position: fixed; right: -500px; top: 0; width: 450px; height: 100%;
+            background: #000; border-left: 1px solid var(--border); padding: 30px;
+            transition: 0.4s; z-index: 100;
+        }
+        #jsonTerminal.open { right: 0; }
+        textarea { width: 100%; height: 75%; background: #0a0a0a; border: 1px solid #333; color: var(--accent-blue); padding: 15px; font-family: monospace; border-radius: 10px; resize: none; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <div class="section-label">Averages</div>
+    <div class="stat-group"><span class="stat-label">Full Cycle</span><div class="stat-value" id="avgCycle">--</div></div>
+    <div class="stat-group"><span class="stat-label">Period Duration</span><div class="stat-value" id="avgDuration">--</div></div>
+    <div class="nav-tools">
+        <button class="tool-btn" onclick="toggleTerminal()">Edit Raw Data</button>
+        <button class="tool-btn" onclick="exportData()">Export Backup</button>
+    </div>
+</aside>
+
+<main>
+    <div class="dashboard-grid">
+        <section class="status-hero">
+            <div class="hero-top">
+                <div class="phase-indicator" id="phaseIcon">☾</div>
+                <div class="status-text">
+                    <div class="bio-marker" id="hormoneMarker" onclick="toggleInsights()">System Ready</div>
+                    <h2 id="countdownDisplay">Ready</h2>
+                    <p id="phaseName">Awaiting Entry</p>
+                </div>
+            </div>
+            
+            <div class="prediction-strip">
+                <div class="pred-box"><span class="pred-label" id="startPredLabel">Expected Next Period</span><span class="pred-date" id="nextPeriodDate">—</span></div>
+                <div class="pred-box"><span class="pred-label" id="endPredLabel">Estimated End Date</span><span class="pred-date" id="nextEndDate">—</span></div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline-track" id="phaseTimeline">
+                    </div>
+            </div>
+        </section>
+
+        <section class="log-panel">
+            <label>Log Cycle Start</label>
+            <input type="date" id="startInput">
+            <label>Log Cycle End (Optional)</label>
+            <input type="date" id="endInput">
+            <button class="btn-action" onclick="logEntry()">Update Calendar</button>
+            <button id="updateBtn" class="btn-action btn-end" style="display:none;" onclick="updateLatest()">End Current Period</button>
+        </section>
+    </div>
+
+    <div id="insightCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;">
+            <h3 id="insightTitle" style="margin:0; font-size:1.3rem;">Phase Insights</h3>
+            <button onclick="toggleInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; padding: 5px 12px; border-radius: 6px; font-size: 0.7rem;">CLOSE ✕</button>
+        </div>
+        <div class="insight-grid">
+            <div class="insight-item"><b>Mood & Mind</b><p id="moodText"></p></div>
+            <div class="insight-item"><b>Energy Levels</b><p id="energyText"></p></div>
+            <div class="insight-item"><b>Skin & Body</b><p id="bodyText"></p></div>
+            <div class="insight-item"><b>Best For</b><p id="activityText"></p></div>
+        </div>
+    </div>
+
+    <div id="historySection">
+        <div class="section-label">Cycle History</div>
+        <table>
+            <thead><tr><th>Timeline</th><th>Days</th><th>Status</th><th></th></tr></thead>
+            <tbody id="historyLog"></tbody>
+        </table>
+    </div>
+</main>
+
+<div id="jsonTerminal">
+    <h3 style="margin-top:0">Data Terminal</h3>
+    <textarea id="jsonArea"></textarea>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="tool-btn" style="flex:1; text-align:center" onclick="applyJson()">Save Changes</button>
+        <button class="tool-btn" style="flex:1; text-align:center" onclick="toggleTerminal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+    let logs = JSON.parse(localStorage.getItem('periodLogs')) || [];
+    let currentPhaseKey = 'MENSTRUAL';
+
+    const PHASES = {
+        MENSTRUAL: { 
+            name: 'Menstrual Phase', color: 'var(--neon-pink)', icon: '☾', hormone: 'Progesterone Drop',
+            mood: 'Turning inward, reflective, sometimes emotional.',
+            energy: 'Lowest point. Your body needs rest and warmth.',
+            body: 'Cramping or bloating. Skin may be sensitive.',
+            activity: 'Light stretching, journaling, and early nights.'
+        },
+        FOLLICULAR: { 
+            name: 'Follicular Phase', color: 'var(--accent-blue)', icon: '☽', hormone: 'Estrogen Rising',
+            mood: 'Outgoing, creative, and mentally sharp.',
+            energy: 'Building steadily. You feel lighter and more capable.',
+            body: 'Skin starts to glow. Metabolism is slightly slower.',
+            activity: 'Starting new projects, social events, and cardio.'
+        },
+        OVULATORY: { 
+            name: 'Ovulatory Phase', color: 'var(--ovulation)', icon: '○', hormone: 'LH Surge',
+            mood: 'Confident, flirtatious, and high communication.',
+            energy: 'Peak performance. You can handle high intensity.',
+            body: 'High libido. Peak fertility. Clear, bright skin.',
+            activity: 'Public speaking, heavy lifting, and social networking.'
+        },
+        LUTEAL: { 
+            name: 'Luteal Phase', color: 'var(--luteal)', icon: '◑', hormone: 'Progesterone Peak',
+            mood: 'Nesting, detail-oriented, but possibly irritable.',
+            energy: 'Waning. You might feel "foggy" or easily winded.',
+            body: 'Oily skin or breakouts. Increased appetite.',
+            activity: 'Organizing, deep cleaning, and strength training.'
+        },
+        LATE: { name: 'Late', color: '#cf2a2a', icon: '!!', hormone: 'Delayed Cycle', mood: 'Uncertainty.', energy: 'Varies.', body: 'Waiting.', activity: 'Hydration.' }
+    };
+
+    function toggleInsights() {
+        const card = document.getElementById('insightCard');
+        const history = document.getElementById('historySection');
+        if (card.style.display === 'block') {
+            card.style.display = 'none';
+            history.style.display = 'block';
+        } else {
+            const data = PHASES[currentPhaseKey];
+            document.getElementById('insightTitle').innerText = data.name;
+            document.getElementById('insightTitle').style.color = data.color;
+            card.style.borderColor = data.color;
+            document.getElementById('moodText').innerText = data.mood;
+            document.getElementById('energyText').innerText = data.energy;
+            document.getElementById('bodyText').innerText = data.body;
+            document.getElementById('activityText').innerText = data.activity;
+            card.style.display = 'block';
+            history.style.display = 'none';
+        }
+    }
+
+    function logEntry() {
+        const start = document.getElementById('startInput').value;
+        const end = document.getElementById('endInput').value;
+        if (!start) return;
+        logs.unshift({ id: Date.now(), start, end: end || null });
+        logs.sort((a, b) => new Date(b.start) - new Date(a.start));
+        save();
+    }
+
+    function updateLatest() {
+        const end = document.getElementById('endInput').value;
+        if (!end) return;
+        logs[0].end = end;
+        save();
+    }
+
+    function save() {
+        localStorage.setItem('periodLogs', JSON.stringify(logs));
+        updateUI();
+    }
+
+    function toggleTerminal() {
+        const term = document.getElementById('jsonTerminal');
+        term.classList.toggle('open');
+        if(term.classList.contains('open')) document.getElementById('jsonArea').value = JSON.stringify(logs, null, 2);
+    }
+
+    function applyJson() {
+        try {
+            logs = JSON.parse(document.getElementById('jsonArea').value);
+            save();
+            toggleTerminal();
+        } catch (e) { alert("Invalid data."); }
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify(logs)], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = "cycle_data.json"; a.click();
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return "Ongoing";
+        const date = new Date(dateStr + "T00:00:00");
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function deleteEntry(id) {
+        if(confirm("Remove?")) { logs = logs.filter(l => l.id !== id); save(); }
+    }
+
+    function updateUI() {
+        const logContainer = document.getElementById('historyLog');
+        logContainer.innerHTML = '';
+        if (logs.length === 0) return;
+
+        let totalC = 0, totalD = 0, vC = 0, vD = 0;
+        logs.forEach((log, i) => {
+            if (log.start && log.end) {
+                totalD += (new Date(log.end + "T00:00:00") - new Date(log.start + "T00:00:00")) / 86400000 + 1;
+                vD++;
+            }
+            if (i < logs.length - 1) {
+                totalC += (new Date(logs[i].start + "T00:00:00") - new Date(logs[i+1].start + "T00:00:00")) / 86400000;
+                vC++;
+            }
+        });
+
+        const avgC = vC > 0 ? Math.round(totalC / vC) : 28;
+        const avgD = vD > 0 ? Math.round(totalD / vD) : 5;
+        document.getElementById('avgCycle').innerText = avgC + " Days";
+        document.getElementById('avgDuration').innerText = avgD + " Days";
+
+        const lastS = new Date(logs[0].start + "T00:00:00");
+        const today = new Date(); today.setHours(0,0,0,0);
+        const day = Math.floor((today - lastS) / 86400000) + 1;
+
+        const countdownDisplay = document.getElementById('countdownDisplay');
+
+        const q2 = Math.floor(avgC - 16); 
+        const q3 = Math.floor(avgC - 12);
+
+        let activePeriod = !logs[0].end || (today >= lastS && today <= new Date(logs[0].end + "T00:00:00"));
+
+        if (day > avgC) {
+            currentPhaseKey = 'LATE';
+            countdownDisplay.innerText = (day - avgC) + " Days Late";
+        } else if (activePeriod) {
+            currentPhaseKey = 'MENSTRUAL';
+            countdownDisplay.innerText = "Day " + day + " of Period";
+        } else {
+            const nextS = new Date(lastS); nextS.setDate(lastS.getDate() + avgC);
+            const diff = Math.ceil((nextS - today) / 86400000);
+            countdownDisplay.innerText = "Next in " + diff + " Days";
+
+            if (day <= q2) currentPhaseKey = 'FOLLICULAR';
+            else if (day <= q3) currentPhaseKey = 'OVULATORY';
+            else currentPhaseKey = 'LUTEAL';
+        }
+
+        const p = PHASES[currentPhaseKey];
+        const iconEl = document.getElementById('phaseIcon');
+        iconEl.innerText = p.icon;
+        iconEl.style.setProperty('--phase-color', p.color);
+        document.getElementById('phaseName').innerText = p.name;
+        document.getElementById('hormoneMarker').innerText = p.hormone + " ⓘ";
+        document.getElementById('hormoneMarker').style.setProperty('--phase-color', p.color);
+        
+        const nextStartDate = new Date(lastS); nextStartDate.setDate(lastS.getDate() + avgC);
+        
+        // --- PREDICTION LOGIC ---
+        if (activePeriod) {
+            document.getElementById('startPredLabel').innerText = "Current Period Start";
+            document.getElementById('nextPeriodDate').innerText = formatDate(logs[0].start);
+            
+            const estEndDate = new Date(lastS); 
+            estEndDate.setDate(lastS.getDate() + (avgD - 1));
+            document.getElementById('endPredLabel').innerText = "Estimated End Date";
+            document.getElementById('nextEndDate').innerText = formatDate(estEndDate.toISOString().split('T')[0]);
+        } else {
+            document.getElementById('startPredLabel').innerText = "Expected Next Period";
+            document.getElementById('nextPeriodDate').innerText = formatDate(nextStartDate.toISOString().split('T')[0]);
+            
+            const nextEndDate = new Date(nextStartDate); 
+            nextEndDate.setDate(nextStartDate.getDate() + (avgD - 1));
+            document.getElementById('endPredLabel').innerText = "Estimated End Date";
+            document.getElementById('nextEndDate').innerText = formatDate(nextEndDate.toISOString().split('T')[0]);
+        }
+
+        // --- TIMELINE GENERATION ---
+        const timeline = document.getElementById('phaseTimeline');
+        timeline.innerHTML = '';
+        
+        const phaseDates = [
+            { label: 'Menstrual', key: 'MENSTRUAL', date: new Date(lastS) },
+            { label: 'Follicular', key: 'FOLLICULAR', date: new Date(new Date(lastS).setDate(lastS.getDate() + avgD)) },
+            { label: 'Ovulation', key: 'OVULATORY', date: new Date(new Date(lastS).setDate(lastS.getDate() + Math.floor(avgC - 14))) },
+            { label: 'Luteal', key: 'LUTEAL', date: new Date(new Date(lastS).setDate(lastS.getDate() + Math.floor(avgC - 10))) },
+            { label: 'Next Cycle', key: 'NEXT', date: new Date(new Date(lastS).setDate(lastS.getDate() + avgC)) }
+        ];
+
+        phaseDates.forEach(point => {
+            const isPassed = today > point.date;
+            const isActive = currentPhaseKey === point.key || (point.key === 'NEXT' && currentPhaseKey === 'LATE');
+            const color = PHASES[point.key === 'NEXT' ? 'MENSTRUAL' : point.key].color;
+            
+            timeline.innerHTML += `
+                <div class="timeline-point ${isActive ? 'active' : ''} ${isPassed ? 'passed' : ''}" style="--dot-color: ${color}">
+                    <div class="dot"></div>
+                    <span class="tp-label">${point.label}</span>
+                    <span class="tp-date">${formatDate(point.date.toISOString().split('T')[0])}</span>
+                </div>
+            `;
+        });
+
+        document.getElementById('updateBtn').style.display = !logs[0].end ? "block" : "none";
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            const dCount = log.end ? Math.floor((new Date(log.end + "T00:00:00") - new Date(log.start + "T00:00:00")) / 86400000) + 1 + " Days" : "Ongoing";
+            row.innerHTML = `
+                <td class="date-range">${formatDate(log.start)} — ${formatDate(log.end)}</td>
+                <td>${dCount}</td>
+                <td><span class="status-tag" style="color:${log.end ? 'var(--text-dim)' : 'var(--neon-pink)'}">${log.end ? 'Finished' : 'Active'}</span></td>
+                <td style="text-align:right;"><button onclick="deleteEntry(${log.id})" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">✕</button></td>
+            `;
+            logContainer.appendChild(row);
+        });
+    }
+    updateUI();
+</script>
+</body>
+</html>
