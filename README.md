@@ -10,3 +10,4 @@ so whenever her period starts you would track it, the way i do it is inside of G
 
 # Links
 
+https://perioddtracker.pages.dev/
