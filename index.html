@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Cycle Dashboard · Compact Timeline + X Delete</title>
+    <title>Cycle Dashboard · Compact Timeline + All Phases on Click</title>
     <style>
         :root {
             --bg: #05070a;
@@ -172,15 +172,65 @@
         }
         .btn-end { background: var(--neon-pink); color: white; }
 
+        /* Insight card - shows ALL phases */
         #insightCard {
             display: none; background: var(--card); border: 1px solid var(--phase-color); 
             border-radius: 28px; padding: 30px; margin-top: 20px; animation: slideUp 0.3s ease;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
-        .insight-item b { display: block; font-size: 0.7rem; color: var(--phase-color); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-        .insight-item p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text-main); }
+        .all-phases-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .phase-card {
+            border-left: 4px solid;
+            padding-left: 18px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 20px;
+            padding: 16px 18px;
+        }
+        .phase-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .phase-hormone {
+            font-size: 0.65rem;
+            background: rgba(255,255,255,0.08);
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .phase-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+            margin-top: 10px;
+        }
+        .phase-detail-item {
+            font-size: 0.75rem;
+        }
+        .detail-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-dim);
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+        .detail-text {
+            color: var(--text-main);
+            line-height: 1.4;
+        }
 
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { text-align: left; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; padding: 15px; border-bottom: 1px solid var(--border); }
@@ -300,7 +350,7 @@
             .pred-date { font-size: 0.9rem; }
             .timeline-point { width: 70px; }
             .tp-date { white-space: normal; font-size: 0.55rem; }
-            .insight-grid { grid-template-columns: 1fr; }
+            .phase-details { grid-template-columns: 1fr; gap: 12px; }
             #jsonTerminal { width: 90%; right: -90%; }
             #jsonTerminal.open { right: 0; }
         }
@@ -359,23 +409,22 @@
         </section>
     </div>
 
+    <!-- Insight card - shows ALL phases when clicked -->
     <div id="insightCard">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
-            <h3 id="insightTitle" style="margin:0; font-size:1.3rem;">Phase Insights</h3>
-            <button onclick="toggleInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:5px 12px; border-radius:6px;">CLOSE ✕</button>
+            <h3 id="insightTitle" style="margin:0; font-size:1.3rem;">All Cycle Phases</h3>
+            <button onclick="closeInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:5px 12px; border-radius:6px; cursor:pointer;">CLOSE ✕</button>
         </div>
-        <div class="insight-grid">
-            <div class="insight-item"><b>Mood & Mind</b><p id="moodText"></p></div>
-            <div class="insight-item"><b>Energy Levels</b><p id="energyText"></p></div>
-            <div class="insight-item"><b>Skin & Body</b><p id="bodyText"></p></div>
-            <div class="insight-item"><b>Best For</b><p id="activityText"></p></div>
+        <div id="allPhasesContainer" class="all-phases-grid">
+            <!-- Dynamically filled with all 5 phases -->
         </div>
     </div>
 
     <div id="historySection">
         <div class="section-label">Cycle History</div>
         <table>
-            <thead><tr><th>Timeline</th><th>Days</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Timeline</th><th>Days</th><th>Status</th><th></th></tr>
+            </thead>
             <tbody id="historyLog"></tbody>
         </table>
     </div>
@@ -397,33 +446,39 @@
     const PHASES = {
         MENSTRUAL: { 
             name: 'Menstrual Phase', color: 'var(--neon-pink)', icon: '☾', hormone: 'Progesterone Drop',
-            mood: 'Turning inward, reflective, sometimes emotional.',
-            energy: 'Lowest point. Your body needs rest and warmth.',
-            body: 'Cramping or bloating. Skin may be sensitive.',
-            activity: 'Light stretching, journaling, and early nights.'
+            mood: 'Turning inward, reflective, sometimes emotional. Honor your need for solitude.',
+            energy: 'Lowest point. Your body needs rest, iron-rich foods, and warmth.',
+            body: 'Cramping or bloating. Skin may be sensitive. Prioritize hydration.',
+            activity: 'Light stretching, journaling, meditation, and early nights.'
         },
         FOLLICULAR: { 
             name: 'Follicular Phase', color: 'var(--accent-blue)', icon: '☽', hormone: 'Estrogen Rising',
-            mood: 'Outgoing, creative, and mentally sharp.',
-            energy: 'Building steadily. You feel lighter and more capable.',
-            body: 'Skin starts to glow. Metabolism is slightly slower.',
-            activity: 'Starting new projects, social events, and cardio.'
+            mood: 'Outgoing, creative, and mentally sharp. Optimism returns.',
+            energy: 'Building steadily. You feel lighter and more capable every day.',
+            body: 'Skin starts to glow. Metabolism is slightly slower. Great time for nutrient-dense meals.',
+            activity: 'Starting new projects, social events, cardio, brainstorming.'
         },
         OVULATORY: { 
             name: 'Ovulatory Phase', color: 'var(--ovulation)', icon: '○', hormone: 'LH Surge',
-            mood: 'Confident, flirtatious, and high communication.',
-            energy: 'Peak performance. You can handle high intensity.',
-            body: 'High libido. Peak fertility. Clear, bright skin.',
-            activity: 'Public speaking, heavy lifting, and social networking.'
+            mood: 'Confident, flirtatious, high communication. Peak social drive.',
+            energy: 'Peak performance. You can handle high-intensity workouts and complex tasks.',
+            body: 'High libido. Peak fertility. Clear, bright skin. Heightened senses.',
+            activity: 'Public speaking, heavy lifting, networking, dating, bold moves.'
         },
         LUTEAL: { 
             name: 'Luteal Phase', color: 'var(--luteal)', icon: '◑', hormone: 'Progesterone Peak',
-            mood: 'Nesting, detail-oriented, but possibly irritable.',
-            energy: 'Waning. You might feel "foggy" or easily winded.',
-            body: 'Oily skin or breakouts. Increased appetite.',
-            activity: 'Organizing, deep cleaning, and strength training.'
+            mood: 'Nesting, detail-oriented, but possibly irritable. Embrace introspection.',
+            energy: 'Waning. You might feel "foggy" or easily winded. Rest when needed.',
+            body: 'Oily skin or breakouts. Increased appetite. Metabolism speeds up.',
+            activity: 'Organizing, deep cleaning, strength training, finishing tasks.'
         },
-        LATE: { name: 'Late Cycle', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed Cycle', mood: 'Uncertainty, patience.', energy: 'Varies, low resilience.', body: 'Bloating, waiting.', activity: 'Hydration, light walks.' }
+        LATE: { 
+            name: 'Late Cycle (PMS)', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed Cycle',
+            mood: 'Sensitivity, impatience, or anxiety. Listen to your boundaries.',
+            energy: 'Low resilience, fatigue may increase. Cancel non-essentials.',
+            body: 'Bloating, breast tenderness, headaches possible.',
+            activity: 'Hydration, light walking, restful yoga, self-compassion.'
+        }
     };
 
     function showToast(msg, isError = false) {
@@ -477,6 +532,45 @@
         }
     }
 
+    // Render all phases in the insight card
+    function renderAllPhases() {
+        const container = document.getElementById('allPhasesContainer');
+        if (!container) return;
+        const phaseOrder = ['MENSTRUAL', 'FOLLICULAR', 'OVULATORY', 'LUTEAL', 'LATE'];
+        let html = '';
+        for (let key of phaseOrder) {
+            const p = PHASES[key];
+            if (!p) continue;
+            html += `
+                <div class="phase-card" style="border-left-color: ${p.color};">
+                    <h4>
+                        <span style="color: ${p.color};">${p.name}</span>
+                        <span class="phase-hormone" style="color: ${p.color};">${p.hormone}</span>
+                    </h4>
+                    <div class="phase-details">
+                        <div class="phase-detail-item">
+                            <div class="detail-label">🧠 Mood & Mind</div>
+                            <div class="detail-text">${p.mood}</div>
+                        </div>
+                        <div class="phase-detail-item">
+                            <div class="detail-label">⚡ Energy Levels</div>
+                            <div class="detail-text">${p.energy}</div>
+                        </div>
+                        <div class="phase-detail-item">
+                            <div class="detail-label">💆 Skin & Body</div>
+                            <div class="detail-text">${p.body}</div>
+                        </div>
+                        <div class="phase-detail-item">
+                            <div class="detail-label">🎯 Best For</div>
+                            <div class="detail-text">${p.activity}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
     function toggleInsights() {
         const card = document.getElementById('insightCard');
         const historyDiv = document.getElementById('historySection');
@@ -484,17 +578,17 @@
             card.style.display = 'none';
             historyDiv.style.display = 'block';
         } else {
-            const data = PHASES[currentPhaseKey] || PHASES.LUTEAL;
-            document.getElementById('insightTitle').innerText = data.name;
-            document.getElementById('insightTitle').style.color = data.color;
-            card.style.borderColor = data.color;
-            document.getElementById('moodText').innerText = data.mood;
-            document.getElementById('energyText').innerText = data.energy;
-            document.getElementById('bodyText').innerText = data.body;
-            document.getElementById('activityText').innerText = data.activity;
+            // Render all phases before showing
+            renderAllPhases();
             card.style.display = 'block';
-            historyDiv.style.display = 'none';
+            historyDiv.style.display = 'block';
+            // Smooth scroll to card
+            setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
         }
+    }
+
+    function closeInsights() {
+        document.getElementById('insightCard').style.display = 'none';
     }
 
     function logEntry() {
@@ -571,6 +665,8 @@
             document.getElementById('nextPeriodDate').innerText = "—";
             document.getElementById('nextEndDate').innerText = "—";
             document.getElementById('updateBtn').style.display = "none";
+            document.getElementById('hormoneMarker').innerHTML = "System Ready ⓘ";
+            document.getElementById('phaseIcon').innerText = '☾';
             return;
         }
 
@@ -679,6 +775,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('jsonTerminal').classList.remove('open');
         updateUI();
+        document.getElementById('insightCard').style.display = 'none';
     });
     updateUI();
 </script>
