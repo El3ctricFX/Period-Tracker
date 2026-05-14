@@ -3,781 +3,771 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Cycle Dashboard · Compact Timeline + All Phases on Click</title>
+    <title>Cycle Tracker · Period Companion</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232d2f45' stroke='%23ff6f91' stroke-width='2'/%3E%3Cpath fill='%23ffdfc4' d='M60,30 A25,25 0 1,1 35,75 A30,30 0 1,0 60,30Z'/%3E%3C/svg%3E">
     <style>
-        :root {
-            --bg: #05070a;
-            --sidebar: #0a0d14;
-            --card: #0f141e;
-            --border: #1e2533;
-            --text-main: #e6edf3;
-            --text-dim: #8b949e;
-            --accent-blue: #00d2ff;
-            --neon-pink: #ff2d75;
-            --ovulation: #00ffaa;
-            --luteal: #bc8cff;
-        }
-
-        * { box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Inter', -apple-system, sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
+            background: radial-gradient(circle at 10% 20%, #0b0e17, #05070c);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            color: #f0f3fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .app-wrapper {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(12, 16, 28, 0.55);
+            backdrop-filter: blur(14px);
+            border-radius: 48px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             overflow: hidden;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5);
         }
-
-        /* --- SIDEBAR (desktop) --- */
-        aside {
-            width: 300px;
-            background: var(--sidebar);
-            border-right: 1px solid var(--border);
+        .top-bar {
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .stats-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 40px 25px 20px 25px;
-        }
-
-        .section-label { 
-            font-weight: 800; font-size: 0.7rem; color: var(--text-dim); 
-            letter-spacing: 2px; margin-bottom: 30px; text-transform: uppercase;
-        }
-        
-        .stat-group { margin-bottom: 35px; }
-        .stat-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
-        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
-
-        .nav-tools {
-            padding: 25px 25px 35px;
-            border-top: 1px solid var(--border);
-            background: var(--sidebar);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .tool-btn { 
-            background: var(--card); border: 1px solid var(--border); color: var(--text-dim); 
-            padding: 12px 16px; border-radius: 14px; cursor: pointer; font-size: 0.75rem; transition: 0.2s;
-            text-align: left; font-weight: 600;
-            width: 100%;
-        }
-        .tool-btn:hover { border-color: var(--accent-blue); color: var(--text-main); background: rgba(0,210,255,0.08); }
-
-        /* --- MAIN DASHBOARD (compact) --- */
-        main { flex: 1; padding: 40px 50px; overflow-y: auto; min-width: 0; }
-
-        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 30px; margin-bottom: 40px; }
-
-        .status-hero {
-            background: var(--card); border: 1px solid var(--border); border-radius: 28px;
-            padding: 40px; display: flex; flex-direction: column;
-        }
-
-        .hero-top { display: flex; align-items: center; gap: 35px; margin-bottom: 30px; flex-wrap: wrap; }
-
-        .phase-indicator {
-            width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--phase-color, var(--accent-blue));
-            display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: var(--phase-color);
-            box-shadow: 0 0 20px rgba(0,0,0,0.4), 0 0 10px var(--phase-color);
-            flex-shrink: 0;
-        }
-
-        .status-text h2 { font-size: 3.2rem; margin: 0; letter-spacing: -1.5px; }
-        .status-text p { color: var(--text-dim); margin: 12px 0 20px; font-size: 1.1rem; font-weight: 500; }
-        
-        .bio-marker { 
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(0,0,0,0.4); padding: 10px 18px; border-radius: 40px; 
-            font-size: 0.75rem; font-weight: 800; color: var(--phase-color);
-            border: 1px solid var(--phase-color); text-transform: uppercase; letter-spacing: 1.2px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .bio-marker:hover { background: var(--phase-color); color: #000; transform: translateY(-1px); }
-
-        .prediction-strip { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
-            padding: 25px 0; border-top: 1px solid var(--border);
-        }
-        .pred-box { display: flex; flex-direction: column; gap: 6px; }
-        .pred-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        .pred-date { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
-
-        /* --- COMPACT TIMELINE (tighter spacing, smaller dots) --- */
-        .timeline-container {
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-        .timeline-track {
-            display: flex;
+            align-items: center;
             justify-content: space-between;
-            position: relative;
-            gap: 8px;
-        }
-        .timeline-track::before {
-            content: '';
-            position: absolute;
-            top: 8px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--border);
-            z-index: 1;
-        }
-        .timeline-point {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            width: 80px;
-            flex-shrink: 0;
-        }
-        .dot {
-            width: 16px;
-            height: 16px;
-            background: var(--card);
-            border: 2px solid var(--border);
-            border-radius: 50%;
-            margin-bottom: 8px;
-        }
-        .timeline-point.active .dot {
-            background: var(--dot-color);
-            border-color: var(--dot-color);
-            box-shadow: 0 0 12px var(--dot-color);
-        }
-        .timeline-point.passed .dot {
-            background: var(--dot-color);
-            border-color: var(--dot-color);
-            opacity: 0.3;
-        }
-        .tp-label { font-size: 0.55rem; text-transform: uppercase; font-weight: 800; color: var(--text-dim); letter-spacing: 0.5px; }
-        .tp-date { font-size: 0.65rem; color: var(--text-main); margin-top: 4px; white-space: nowrap; }
-
-        .log-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 30px; }
-        label { display: block; font-size: 0.65rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; }
-        input[type="date"] {
-            width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 14px; border-radius: 14px; font-family: inherit; font-size: 0.9rem; margin-bottom: 15px;
-        }
-        .btn-action { 
-            width: 100%; background: var(--accent-blue); color: #000; border: none; padding: 16px; 
-            border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; margin-top: 10px;
-        }
-        .btn-end { background: var(--neon-pink); color: white; }
-
-        /* Insight card - shows ALL phases */
-        #insightCard {
-            display: none; background: var(--card); border: 1px solid var(--phase-color); 
-            border-radius: 28px; padding: 30px; margin-top: 20px; animation: slideUp 0.3s ease;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .all-phases-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        .phase-card {
-            border-left: 4px solid;
-            padding-left: 18px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 20px;
-            padding: 16px 18px;
-        }
-        .phase-card h4 {
-            margin: 0 0 8px 0;
-            font-size: 1rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 12px;
             flex-wrap: wrap;
+            gap: 15px;
+            padding: 18px 32px;
+            background: rgba(5, 7, 14, 0.65);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .phase-hormone {
-            font-size: 0.65rem;
-            background: rgba(255,255,255,0.08);
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-weight: normal;
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 2rem; filter: drop-shadow(0 0 6px #ff7b9c); }
+        .logo-text { font-weight: 700; font-size: 1.4rem; letter-spacing: -0.3px; background: linear-gradient(135deg, #fff, #b7c9ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .nav-links { display: flex; gap: 12px; background: rgba(0, 0, 0, 0.3); padding: 5px; border-radius: 60px; backdrop-filter: blur(4px); }
+        .nav-btn { background: transparent; border: none; color: #a0acc9; font-weight: 600; font-size: 0.9rem; padding: 10px 24px; border-radius: 40px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+        .nav-btn.active { background: #2c2f42; color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); border: 0.5px solid rgba(255,255,255,0.1); }
+        .nav-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: #eef3ff; }
+        .stats-mini { display: flex; gap: 28px; background: rgba(0, 0, 0, 0.35); padding: 8px 22px; border-radius: 56px; backdrop-filter: blur(8px); }
+        .stat-badge { display: flex; flex-direction: column; align-items: center; }
+        .stat-badge span:first-child { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #9aa7c9; }
+        .stat-badge span:last-child { font-size: 1.35rem; font-weight: 800; color: #f0f3ff; line-height: 1.2; }
+        .tool-group { display: flex; align-items: center; gap: 10px; }
+        
+        /* Restored rounded buttons with mixed layout */
+        .icon-btn { 
+            background: rgba(20, 24, 38, 0.8); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 32px; 
+            padding: 8px 14px;
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            color: #cdd9ff; 
+            font-size: 0.75rem; 
+            font-weight: 500;
+            cursor: pointer; 
+            transition: 0.2s; 
+            backdrop-filter: blur(4px); 
         }
-        .phase-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px 20px;
-            margin-top: 10px;
+        .icon-btn:hover { 
+            background: #2e3550; 
+            border-color: #00ffaa; 
+            color: white; 
+            box-shadow: 0 0 8px rgba(0, 255, 170, 0.3); 
         }
-        .phase-detail-item {
-            font-size: 0.75rem;
-        }
-        .detail-label {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--text-dim);
-            letter-spacing: 0.8px;
-            margin-bottom: 4px;
-        }
-        .detail-text {
-            color: var(--text-main);
-            line-height: 1.4;
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; padding: 15px; border-bottom: 1px solid var(--border); }
-        td { padding: 18px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .date-range { font-weight: 600; color: var(--text-main); }
-        .status-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); }
-
-        /* Compact X delete button */
-        .delete-x {
-            background: rgba(255,45,117,0.2);
-            border: 1px solid var(--neon-pink);
-            color: var(--neon-pink);
-            border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
+        .icon-only {
+            padding: 0;
+            width: 36px;
+            height: 36px;
             justify-content: center;
-            width: 32px;
-        }
-        .delete-x:hover {
-            background: var(--neon-pink);
-            color: #000;
-            transform: scale(1.02);
+            border-radius: 50%;
+            font-size: 1.1rem;
         }
 
-        #jsonTerminal {
-            position: fixed; right: -500px; top: 0; width: 450px; height: 100%;
-            background: #06090f; border-left: 1px solid var(--border); padding: 30px;
-            transition: 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1); z-index: 1000;
-            box-shadow: -10px 0 25px rgba(0,0,0,0.5);
-        }
-        #jsonTerminal.open { right: 0; }
-        textarea { width: 100%; height: 70%; background: #0a0c12; border: 1px solid #2a2f3a; color: var(--accent-blue); padding: 18px; font-family: monospace; border-radius: 18px; resize: vertical; }
+        .view-pane { display: none; padding: 32px 36px; animation: fadeSlide 0.3s ease; }
+        .view-pane.active { display: block; }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+        .grid-2col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 28px; margin-bottom: 40px; }
+        .hero-card { background: rgba(18, 22, 36, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 40px; padding: 28px 32px; }
+        .phase-top { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; margin-bottom: 28px; }
+        .phase-ring { width: 96px; height: 96px; border-radius: 50%; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; border: 2px solid var(--phase-glow); box-shadow: 0 0 18px rgba(0,0,0,0.3), 0 0 8px var(--phase-glow); }
+        .phase-title h2 { font-size: 2.6rem; font-weight: 700; letter-spacing: -1px; margin: 0; }
+        .phase-sub { color: #b6c4e5; margin-top: 8px; font-weight: 500; }
+        .marker-chip { background: rgba(0,0,0,0.4); padding: 8px 20px; border-radius: 50px; font-size: 0.75rem; font-weight: 700; border-left: 3px solid var(--phase-glow); cursor: pointer; transition: 0.2s; display: inline-block; margin-bottom: 12px; }
+        .predict-row { display: flex; gap: 28px; padding: 24px 0 16px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 12px; }
+        .pred-item { flex: 1; }
+        .pred-label-sm { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #8f9ec2; }
+        .pred-date-lg { font-size: 1.2rem; font-weight: 700; margin-top: 6px; }
+        .timeline-strip { margin-top: 20px; }
+        .timeline-flex { display: flex; justify-content: space-between; gap: 0; flex-wrap: wrap; align-items: flex-start; }
+        .tl-point { text-align: center; flex: 1; min-width: 70px; position: relative; }
+        .tl-point:not(:last-child)::after { content: ''; position: absolute; top: 7px; left: calc(50% + 7px); width: calc(100% - 14px); height: 2px; background: rgba(255,255,255,0.08); }
+        .tl-point.passed:not(:last-child)::after { background: var(--phase-dot); opacity: 0.45; }
+        .tl-point.active:not(:last-child)::after { background: linear-gradient(90deg, var(--phase-dot) var(--phase-progress, 0%), rgba(255,255,255,0.08) var(--phase-progress, 0%)); opacity: 0.8; }
+        .tl-dot { width: 14px; height: 14px; background: #2e3548; border-radius: 50%; margin: 0 auto 8px; transition: 0.1s; border: 1px solid rgba(255,255,255,0.3); position: relative; z-index: 1; }
+        .tl-point.passed .tl-dot { background: var(--phase-dot); opacity: 0.5; }
+        .tl-point.active .tl-dot { background: var(--phase-dot); box-shadow: 0 0 14px var(--phase-dot); transform: scale(1.1); }
+        .tl-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #95a3c5; }
+        .tl-date { font-size: 0.65rem; color: #e2eaff; }
+        .log-card { background: rgba(18, 22, 36, 0.65); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 40px; padding: 28px; }
+        .form-group { margin-bottom: 18px; }
+        label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: #9aaac9; display: block; margin-bottom: 8px; }
+        input { width: 100%; background: rgba(0, 0, 0, 0.5); border: 1px solid #2f3855; border-radius: 24px; padding: 14px 18px; color: white; font-size: 0.9rem; font-family: inherit; }
+        .btn-primary { background: linear-gradient(120deg, #ff6f91, #ff2d75); border: none; width: 100%; padding: 14px; border-radius: 40px; font-weight: 800; font-size: 0.85rem; color: white; cursor: pointer; margin-top: 12px; transition: 0.2s; box-shadow: 0 8px 14px -8px rgba(255, 45, 117, 0.3); }
+        .btn-secondary { background: #2c3555; border: none; width: 100%; padding: 14px; border-radius: 40px; font-weight: 700; margin-top: 12px; cursor: pointer; color: #f0f3ff; }
+        .insight-glass { background: rgba(10, 14, 26, 0.85); backdrop-filter: blur(16px); border-radius: 40px; margin-bottom: 40px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; }
+        .insight-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .phases-grid { display: flex; flex-direction: column; gap: 20px; padding: 28px; max-height: 520px; overflow-y: auto; }
+        .phase-detail-card { border-left: 4px solid; background: rgba(0,0,0,0.25); border-radius: 28px; padding: 20px; }
+        .history-wrapper { margin-top: 24px; }
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th { text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #9eafd4; padding: 16px 8px 12px 0; }
+        .history-table td { padding: 14px 8px 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .delete-badge { background: rgba(255, 70, 100, 0.2); border: none; padding: 6px 14px; border-radius: 30px; color: #ff8aa5; cursor: pointer; font-weight: 600; font-size: 0.7rem; }
+        .calendar-actions { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 28px; }
+        .year-picker { background: #1e2538; border: 1px solid #3f4a6b; padding: 10px 18px; border-radius: 32px; color: white; font-weight: 500; }
+        .calendar-grid-modern { overflow-x: auto; }
+        .cal-grid { display: grid; gap: 4px; min-width: 880px; }
+        .cal-row { display: grid; grid-template-columns: 60px repeat(31, 1fr); gap: 4px; margin-bottom: 4px; }
+        .cal-cell { background: rgba(20, 26, 42, 0.6); border-radius: 10px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; transition: 0.1s; }
+        .cal-cell.day-cell { cursor: pointer; border: 1px solid transparent; }
+        .cal-cell.day-cell:hover { background: #3e4870; transform: scale(1.02); }
 
-        #importFileInput { display: none; }
-        .toast-msg {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-blue);
+        /* Mobile monthly calendar */
+        .mob-cal-nav { display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .mob-cal-title { font-size: 1.2rem; font-weight: 700; }
+        .mob-nav-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: white; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+        .mob-nav-btn:hover { background: #2e3550; }
+        .mob-cal-grid { display: none; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .mob-cal-header { text-align: center; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #6b7fa3; padding: 6px 0; }
+        .mob-cal-day { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: 1px solid transparent; transition: 0.15s; background: rgba(20,26,42,0.6); }
+        .mob-cal-day:hover { background: #3e4870; }
+        .mob-cal-day.empty { background: transparent; cursor: default; pointer-events: none; }
+        .mob-cal-day.active-start { background: #ff2d75; color: black; font-weight: bold; box-shadow: 0 0 12px #ff2d75; animation: pulse-glow 1.2s infinite; }
+        .mob-cal-day.active-end { background: #b62055; color: white; }
+        .mob-cal-day.active-period { background: rgba(255,45,117,0.4); border-color: #ff6f91; }
+        .mob-cal-day.last-tracked { border: 2px solid #ffb347; box-shadow: 0 0 6px #ffb347; }
+        .mob-cal-day.today-marker { outline: 2px solid rgba(255,255,255,0.3); outline-offset: 2px; }
+
+        @media (max-width: 860px) {
+            .app-wrapper { border-radius: 32px; } 
+            .view-pane { padding: 20px; } 
+            .grid-2col { grid-template-columns: 1fr; } 
+            .top-bar { flex-direction: column; align-items: stretch; } 
+            .stats-mini { justify-content: center; } 
+            .tool-group { justify-content: center; flex-wrap: wrap; margin-top: 10px; } 
+            .calendar-grid-modern { display: none; }
+            .mob-cal-nav { display: flex; }
+            .mob-cal-grid { display: grid; }
+            #calendarHint { font-size: 0.68rem; }
+        }
+
+        /* Print summary */
+        #printSummary { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printSummary, #printSummary * { visibility: visible; }
+            #printSummary { display: block !important; position: fixed; top: 0; left: 0; width: 100%; padding: 40px; background: white; color: #111; font-family: Georgia, serif; }
+            .ps-title { font-size: 2rem; font-weight: bold; margin-bottom: 4px; }
+            .ps-subtitle { color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+            .ps-stats { display: flex; gap: 40px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+            .ps-stat label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; display: block; }
+            .ps-stat span { font-size: 1.6rem; font-weight: bold; color: #111; }
+            .ps-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+            .ps-table th { text-align: left; border-bottom: 2px solid #ddd; padding: 8px 12px 8px 0; color: #555; font-size: 0.75rem; text-transform: uppercase; }
+            .ps-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid #eee; }
+            .ps-footer { margin-top: 30px; font-size: 0.75rem; color: #aaa; }
+        }
+        .cal-cell.active-start {
+            background: #ff2d75;
             color: black;
             font-weight: bold;
-            padding: 10px 22px;
-            border-radius: 60px;
-            z-index: 1100;
-            animation: fadeOut 2s ease forwards;
+            box-shadow: 0 0 12px #ff2d75;
+            animation: pulse-glow 1.2s infinite ease-in-out;
         }
-        @keyframes fadeOut {
-            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(20px); visibility: hidden; }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 45, 117, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 45, 117, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 45, 117, 0); }
         }
+        .cal-cell.active-end { background: #b62055; color: white; }
+        .cal-cell.active-period { background: rgba(255, 45, 117, 0.45); border: 1px solid #ff6f91; }
+        .cal-cell.last-tracked {
+            border: 2px solid #ffb347;
+            box-shadow: 0 0 6px #ffb347;
+        }
+        .edu-container-full { max-width: 1000px; margin: 0 auto; line-height: 1.6; }
+        .edu-card-full { background: rgba(12, 17, 30, 0.7); backdrop-filter: blur(8px); border-radius: 36px; padding: 32px; margin-bottom: 32px; border-left: 6px solid; }
+        .edu-card-full h2 { font-size: 1.8rem; letter-spacing: -0.5px; margin-bottom: 16px; }
+        .edu-toggle-btn { background: none; border: none; color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; font-family: inherit; padding: 0; }
+        .edu-toggle-btn h2 { margin-bottom: 0; flex: 1; }
+        .edu-chevron { font-size: 1.2rem; color: #8f9ec2; transition: transform 0.3s ease; display: flex; align-items: center; padding-left: 12px; }
+        .edu-chevron.collapsed { transform: rotate(-90deg); }
+        .edu-body { overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s ease; max-height: 2000px; opacity: 1; }
+        .edu-body.collapsed { max-height: 0; opacity: 0; }
+        .edu-meta { font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: rgba(255, 255, 255, 0.08); display: inline-block; padding: 6px 16px; border-radius: 40px; margin-bottom: 20px; color: #eef3ff; }
+        .edu-text p { margin-bottom: 18px; color: #e2eaff; }
+        .disclaimer { background: rgba(0, 0, 0, 0.4); border-left: 4px solid #ffb347; padding: 20px 28px; border-radius: 28px; margin-bottom: 35px; font-size: 0.85rem; }
+        .terminal-panel { position: fixed; right: -480px; top: 0; width: 460px; height: 100%; background: #0a0e1c; border-left: 1px solid #2c3655; backdrop-filter: blur(32px); z-index: 1200; transition: 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); padding: 30px; box-shadow: -8px 0 35px rgba(0,0,0,0.6); }
+        .terminal-panel.open { right: 0; }
+        textarea { width: 100%; height: 280px; background: #03050b; border: 1px solid #3d4668; color: #9ee8ff; border-radius: 24px; padding: 18px; font-family: monospace; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1f2a3e; backdrop-filter: blur(12px); padding: 12px 28px; border-radius: 60px; font-weight: 600; z-index: 1300; animation: fadeOut 2s forwards; border: 1px solid #ffb3c7; }
+        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #151e2c; border-radius: 10px; } ::-webkit-scrollbar-thumb { background: #ff6f91; border-radius: 10px; }
 
-        /* --- MOBILE & TABLET (breakpoint 1024px) --- */
-        @media (max-width: 1024px) {
-            body {
-                flex-direction: column;
-                height: auto;
-                overflow: auto;
-            }
-            aside {
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-            }
-            .stats-scroll {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-                padding: 16px 20px;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            .section-label {
-                width: 100%;
-                margin-bottom: 6px;
-            }
-            .stat-group {
-                margin-bottom: 0;
-                display: inline-flex;
-                align-items: baseline;
-                gap: 8px;
-                background: rgba(15,20,30,0.8);
-                padding: 6px 14px;
-                border-radius: 40px;
-            }
-            .stat-value { font-size: 1.1rem; }
-            .nav-tools {
-                flex-direction: row;
-                padding: 12px 20px;
-                border-top: none;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-            .tool-btn {
-                width: auto;
-                flex: 1;
-                text-align: center;
-                padding: 10px 12px;
-                font-size: 0.7rem;
-            }
-            main {
-                padding: 20px;
-            }
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            .status-hero { padding: 24px; }
-            .phase-indicator { width: 70px; height: 70px; font-size: 1.8rem; }
-            .status-text h2 { font-size: 2rem; }
-            .pred-date { font-size: 0.9rem; }
-            .timeline-point { width: 70px; }
-            .tp-date { white-space: normal; font-size: 0.55rem; }
-            .phase-details { grid-template-columns: 1fr; gap: 12px; }
-            #jsonTerminal { width: 90%; right: -90%; }
-            #jsonTerminal.open { right: 0; }
-        }
-        @media (max-width: 480px) {
-            .phase-indicator { width: 58px; height: 58px; }
-            .status-text h2 { font-size: 1.6rem; }
-            .timeline-point { width: 60px; }
-            .tp-label { font-size: 0.5rem; }
-        }
+        /* ── Light mode ─────────────────────────────────────────── */
+        body.light { background: radial-gradient(circle at 10% 20%, #fce4ec, #f8f0f8); color: #1a1f3a; }
+        body.light ::-webkit-scrollbar-track { background: #f5e6ef; }
+        body.light .app-wrapper { background: rgba(255,255,255,0.78); border-color: rgba(0,0,0,0.07); box-shadow: 0 25px 45px -12px rgba(180,120,150,0.15); }
+        body.light .top-bar { background: rgba(255,255,255,0.88); border-color: rgba(0,0,0,0.07); }
+        body.light .logo-text { background: linear-gradient(135deg, #1a1f3a, #5a6acd); -webkit-background-clip: text; background-clip: text; }
+        body.light .nav-links { background: rgba(0,0,0,0.06); }
+        body.light .nav-btn { color: #5a6a8a; }
+        body.light .nav-btn.active { background: #ff6f91; color: white; border-color: transparent; }
+        body.light .nav-btn:hover:not(.active) { background: rgba(0,0,0,0.05); color: #1a1f3a; }
+        body.light .stats-mini { background: rgba(0,0,0,0.05); }
+        body.light .stat-badge span:first-child { color: #7a8aaa; }
+        body.light .stat-badge span:last-child { color: #1a1f3a; }
+        body.light .icon-btn { background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.12); color: #4a5a7a; }
+        body.light .icon-btn:hover { background: #fce4ec; border-color: #ff92b0; color: #1a1f3a; box-shadow: none; }
+        body.light .hero-card, body.light .log-card { background: rgba(255,255,255,0.78); border-color: rgba(0,0,0,0.06); }
+        body.light .phase-sub { color: #6a7a9a; }
+        body.light .marker-chip { background: rgba(0,0,0,0.05); color: #3a4a6a; }
+        body.light .predict-row { border-color: rgba(0,0,0,0.08); }
+        body.light .pred-label-sm { color: #7a8aaa; }
+        body.light .pred-date-lg { color: #1a1f3a; }
+        body.light .tl-point:not(:last-child)::after { background: rgba(0,0,0,0.1); }
+        body.light .tl-dot { background: #dde3f0; border-color: rgba(0,0,0,0.15); }
+        body.light .tl-point.passed .tl-dot { background: var(--phase-dot); opacity: 0.6; border-color: transparent; }
+        body.light .tl-point.active .tl-dot { background: var(--phase-dot); box-shadow: 0 0 14px var(--phase-dot); transform: scale(1.1); border-color: transparent; opacity: 1; }
+        body.light .phase-ring { background: rgba(255,255,255,0.55); box-shadow: 0 0 18px rgba(200,150,170,0.2), 0 0 8px var(--phase-glow); }
+        body.light .cal-cell.active-start { background: #ff2d75; color: black; }
+        body.light .cal-cell.active-end { background: #b62055; color: white; }
+        body.light .cal-cell.active-period { background: rgba(255,45,117,0.25); border-color: #ff6f91; color: #1a1f3a; }
+        body.light .cal-cell.last-tracked { border: 2px solid #ffb347; box-shadow: 0 0 6px #ffb347; }
+        body.light .mob-cal-day.active-start { background: #ff2d75; color: black; }
+        body.light .mob-cal-day.active-end { background: #b62055; color: white; }
+        body.light .mob-cal-day.active-period { background: rgba(255,45,117,0.25); border-color: #ff6f91; color: #1a1f3a; }
+        body.light .mob-cal-day.last-tracked { border: 2px solid #ffb347; box-shadow: 0 0 6px #ffb347; }
+        body.light .tl-label { color: #7a8aaa; }
+        body.light .tl-date { color: #3a4a6a; }
+        body.light label { color: #6a7a9a; }
+        body.light input { background: rgba(0,0,0,0.04); border-color: #d0d8ea; color: #1a1f3a; color-scheme: light; }
+        body.light .btn-secondary { background: #eaecf5; color: #3a4a6a; }
+        body.light .insight-glass { background: rgba(255,255,255,0.94); border-color: rgba(0,0,0,0.08); }
+        body.light .insight-header { border-color: rgba(0,0,0,0.08); }
+        body.light .insight-header h3 { color: #1a1f3a; }
+        body.light .insight-header button { border-color: rgba(0,0,0,0.2); color: #1a1f3a; }
+        body.light .phase-detail-card { background: rgba(0,0,0,0.03); color: #3a4a6a; }
+        body.light .phase-detail-card h4 { color: #1a1f3a; }
+        body.light .history-wrapper .pred-label-sm { color: #7a8aaa; }
+        body.light .history-table th { color: #7a8aaa; }
+        body.light .history-table td { border-color: rgba(0,0,0,0.06); color: #1a1f3a; }
+        body.light .cal-cell { background: rgba(0,0,0,0.04); color: #3a4a6a; }
+        body.light .cal-cell.day-cell:hover { background: #fce4ec; }
+        body.light .mob-cal-day { background: rgba(0,0,0,0.04); color: #3a4a6a; }
+        body.light .mob-cal-day:hover { background: #fce4ec; }
+        body.light .mob-cal-header { color: #8a9abb; }
+        body.light .mob-cal-title { color: #1a1f3a; }
+        body.light .mob-nav-btn { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); color: #1a1f3a; }
+        body.light .edu-container-full h1 { color: #1a1f3a; }
+        body.light .edu-intro { color: #3a4a6a; }
+        body.light .edu-card-full { background: rgba(255,255,255,0.85); }
+        body.light .edu-card-full h2 { color: #1a1f3a; }
+        body.light .edu-chevron { color: #8a9abb; }
+        body.light .edu-meta { background: rgba(0,0,0,0.06); color: #3a4a6a; }
+        body.light .edu-text p { color: #3a4a6a; }
+        body.light .edu-text strong { color: #1a1f3a; }
+        body.light .disclaimer { background: rgba(255,248,220,0.9); color: #4a3a1a; border-color: #f0a830; }
+        body.light .calendar-actions h2 { color: #1a1f3a; }
+        body.light .year-picker { background: #fff; border-color: #d0d8ea; color: #1a1f3a; }
+        body.light .terminal-panel { background: #f8f0f5; border-color: rgba(0,0,0,0.1); }
+        body.light .terminal-panel h3 { color: #1a1f3a; }
+        body.light textarea { background: #fff; border-color: #d0d8ea; color: #1a1f3a; }
+        body.light .toast { background: rgba(255,255,255,0.96); color: #1a1f3a; border-color: #ffb3c7; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        body.light #calendarHint { color: #7a8aaa; }
     </style>
 </head>
 <body>
-
-<aside>
-    <div class="stats-scroll">
-        <div class="section-label">Averages</div>
-        <div class="stat-group"><span class="stat-label">Full Cycle</span><div class="stat-value" id="avgCycle">--</div></div>
-        <div class="stat-group"><span class="stat-label">Period Duration</span><div class="stat-value" id="avgDuration">--</div></div>
+<div class="app-wrapper">
+    <div class="top-bar">
+        <div class="logo-area"><div class="logo-icon">🌙</div><div class="logo-text">Cycle Tracker</div></div>
+        <div class="nav-links">
+            <button class="nav-btn active" onclick="switchView('dashboard')">Dashboard</button>
+            <button class="nav-btn" onclick="switchView('calendar')">Calendar</button>
+            <button class="nav-btn" onclick="switchView('education')">Information</button>
+        </div>
+        <div class="stats-mini"><div class="stat-badge"><span>Avg cycle</span><span id="avgCycle">--</span></div><div class="stat-badge"><span>Period length</span><span id="avgDuration">--</span></div></div>
+        
+        <div class="tool-group">
+            <button class="icon-btn" onclick="loadDemo()" style="border-color: #ffb347; color: #ffb347;">✨ Demo</button>
+            <button class="icon-btn" onclick="exportData()">📎 Export</button>
+            <button class="icon-btn" id="importBtnTrigger">📂 Import</button>
+            
+            <button class="icon-btn icon-only" id="themeBtn" onclick="toggleTheme()" title="Toggle Theme">☀️</button>
+            <button class="icon-btn icon-only" onclick="printSummary()" title="Print Summary">📄</button>
+            <button class="icon-btn icon-only" onclick="clearAllData()" title="Reset All">⟳</button>
+            <div id="devZone" class="icon-btn icon-only" title="Developer JSON Tools">🖥️</div>
+        </div>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none">
     </div>
-    <div class="nav-tools">
-        <button class="tool-btn" onclick="toggleTerminal()">✎ Edit Raw Data</button>
-        <button class="tool-btn" onclick="exportData()">⬇️ Export Backup</button>
-        <button class="tool-btn" id="importBtnTrigger">📂 Import Backup</button>
-        <input type="file" id="importFileInput" accept="application/json">
-        <button class="tool-btn" onclick="clearAllData()" style="color:#ff8a7a;">⟳ Reset All</button>
-    </div>
-</aside>
 
-<main>
-    <div class="dashboard-grid">
-        <section class="status-hero">
-            <div class="hero-top">
-                <div class="phase-indicator" id="phaseIcon">☾</div>
-                <div class="status-text">
-                    <div class="bio-marker" id="hormoneMarker" onclick="toggleInsights()">System Ready</div>
-                    <h2 id="countdownDisplay">Ready</h2>
-                    <p id="phaseName">Awaiting Entry</p>
+    <div id="view-dashboard" class="view-pane active">
+        <div class="grid-2col">
+            <div class="hero-card">
+                <div class="phase-top"><div class="phase-ring" id="phaseIcon" style="--phase-glow: var(--phase-color)">☾</div><div class="phase-title"><div class="marker-chip" id="hormoneMarker" style="--phase-glow: var(--phase-color)" onclick="toggleInsights()">ⓘ System Info</div><h2 id="countdownDisplay">Ready</h2><div class="phase-sub" id="phaseName">Awaiting entry</div></div></div>
+                <div class="predict-row"><div class="pred-item"><div class="pred-label-sm" id="startPredLabel">Next start</div><div class="pred-date-lg" id="nextPeriodDate">—</div></div><div class="pred-item"><div class="pred-label-sm" id="endPredLabel">Est. end</div><div class="pred-date-lg" id="nextEndDate">—</div></div></div>
+                <div class="timeline-strip"><div class="timeline-flex" id="phaseTimeline"></div></div>
+            </div>
+            <div class="log-card">
+                <div class="form-group"><label>📅 Cycle start date</label><input type="date" id="startInput"></div>
+                <div class="form-group"><label>🔚 End date (optional)</label><input type="date" id="endInput"></div>
+                <button class="btn-primary" onclick="logEntry()">➕ Add / update cycle</button>
+                <button id="updateBtn" class="btn-secondary" style="display:none;" onclick="updateLatest()">✖ End current period</button>
+            </div>
+        </div>
+        <div id="insightCard" style="display:none;" class="insight-glass"><div class="insight-header"><h3 style="margin:0;">✨ Cycle Phase Insights</h3><button onclick="closeInsights()" style="background:none; border:1px solid #5e6d92; border-radius:30px; padding:6px 16px; color:white;">Close</button></div><div id="allPhasesContainer" class="phases-grid"></div></div>
+        <div class="history-wrapper"><div class="pred-label-sm" style="margin-bottom:12px;">📋 Cycle history</div><table class="history-table"><thead><tr><th>Date range</th><th>Days</th><th>Status</th><th></th></thead><tbody id="historyLog"></tbody></table></div>
+    </div>
+
+    <div id="view-calendar" class="view-pane">
+        <div class="calendar-actions"><h2 style="font-weight:600;">🗓️ Yearly heatmap</h2><select id="yearSelect" class="year-picker" onchange="renderCalendar()"></select></div>
+        <div class="mob-cal-nav">
+            <button class="mob-nav-btn" onclick="shiftMonth(-1)">‹</button>
+            <span class="mob-cal-title" id="mobCalTitle"></span>
+            <button class="mob-nav-btn" onclick="shiftMonth(1)">›</button>
+        </div>
+        <div class="mob-cal-grid" id="mobCalGrid"></div>
+        <div class="calendar-grid-modern"><div class="cal-grid" id="calendarGrid"></div></div>
+        <p id="calendarHint" style="font-size:0.7rem; color:#a3b3d9; margin-top:20px; text-align:center;">
+            ✨ <strong>Tap any day:</strong> extend or shorten active period (freely adjust both directions).<br>
+            🔁 <strong>Tap the last tracked day again</strong> → toggle end date (finish / reactivate).<br>
+            🗑️ <strong>Tap the start date</strong> → delete entire period.<br>
+            🔄 <strong>Tap an end date</strong> → remove the end date (period becomes active again).<br>
+            🟡 <strong>Gold border</strong> = last tracked day (tap to end/undo).<br>
+            💖 <strong>Pulsing glow</strong> = start date of active period.
+        </p>
+    </div>
+
+    <div id="view-education" class="view-pane">
+        <div class="edu-container-full">
+            <h1 style="font-size:2.2rem; margin-bottom:12px;">How the Cycle Works</h1>
+            <div class="disclaimer"><strong>⚠️ Heads up before you read:</strong> I'm not a doctor, nurse, or anything close — just a guy who built this for a friend. The information in this app was researched and written with the help of AI, then reviewed and approved by female friends who confirmed it felt accurate and useful. That said, it's still a starting point, not medical advice. Bodies vary, cycles vary, and if something feels off or you have real concerns, please look it up from proper sources or talk to an actual healthcare provider. Don't take a random guy's AI-assisted app as the final word.</div>
+            <p class="edu-intro" style="margin-bottom:30px;">Whether it's happening to your body or you just want to understand what someone else is going through, the menstrual cycle doesn't have to be a mystery. Think of it as a monthly loop where the body prepares itself in case a pregnancy happens, then resets when it doesn't. The "average" cycle is 28 days, but anywhere from 21 to 35 days is completely normal — and your own cycle may vary month to month. Here is exactly what is happening during that loop.</p>
+
+            <div class="edu-card-full" style="border-left-color: #ff4d7a;">
+                <div class="edu-toggle-btn" onclick="toggleEduCard(this)">
+                    <h2>☾ Phase 1: The Period (Menstruation)</h2>
+                    <span class="edu-chevron collapsed">▾</span>
+                </div>
+                <div class="edu-body collapsed">
+                <div class="edu-meta">Usually Days 1–7 (average 3–5 days, but 2–7 is normal)</div>
+                <div class="edu-text">
+                    <p><strong>What's happening:</strong> The body has confirmed there's no pregnancy this month, so the thick uterine lining it built up is no longer needed. The body sheds that lining, which exits as bleeding. This marks Day 1 of a new cycle — it's the reset button.</p>
+                    <p><strong>How it feels:</strong> The uterus contracts to push out the lining, which causes cramping — anywhere from mild to quite intense. Lower back pain, fatigue, bloating, and food cravings are all common. Energy is usually at its lowest point. This is genuinely a good time to slow down and rest.</p>
+                    <p><strong>What's normal:</strong> Flow can range from light spotting to heavy bleeding, and it often changes day to day within the same period. Passing small clots is common. If bleeding is consistently soaking through a pad or tampon every hour for several hours, that's worth mentioning to a doctor.</p>
+                    <p><strong>🍽️ Foods that tend to help:</strong> Iron-rich foods like red meat, spinach, lentils, and tofu help replace what's lost through bleeding — pairing them with vitamin C (like lemon juice or bell peppers) helps your body absorb the iron better. Magnesium-rich foods like dark chocolate, bananas, nuts, and seeds can ease cramping. Ginger and turmeric are natural anti-inflammatories that may take the edge off cramps and bloating. Staying well hydrated and reducing salt can help with water retention. Cravings are real and make sense — your body is working hard, so don't stress about them.</p>
+                </div>
                 </div>
             </div>
-            <div class="prediction-strip">
-                <div class="pred-box"><span class="pred-label" id="startPredLabel">Expected Next Period</span><span class="pred-date" id="nextPeriodDate">—</span></div>
-                <div class="pred-box"><span class="pred-label" id="endPredLabel">Estimated End Date</span><span class="pred-date" id="nextEndDate">—</span></div>
+
+            <div class="edu-card-full" style="border-left-color: #00b4ff;">
+                <div class="edu-toggle-btn" onclick="toggleEduCard(this)">
+                    <h2>☽ Phase 2: The Rebuild (Follicular)</h2>
+                    <span class="edu-chevron collapsed">▾</span>
+                </div>
+                <div class="edu-body collapsed">
+                <div class="edu-meta">Usually Days 1–13 (overlaps with the period)</div>
+                <div class="edu-text">
+                    <p><strong>What's happening:</strong> While the period is still wrapping up, the brain is already sending signals to the ovaries to start developing a new egg for this month. Several follicles (small fluid-filled sacs, each containing an egg) begin to grow, and the body starts rebuilding the uterine lining. Eventually one dominant follicle wins out and continues to mature.</p>
+                    <p><strong>How it feels:</strong> Rising estrogen is doing a lot of good work here. Energy climbs back up, mood tends to improve, and mental clarity returns. Most people feel noticeably more social, motivated, and optimistic during this phase. Skin often looks clearer too, as estrogen supports collagen production.</p>
+                    <p><strong>What to know:</strong> This phase is the most variable in length — it's the main reason cycles differ from person to person and month to month. A "short" cycle usually means a short follicular phase; a "long" one means this phase ran longer than usual.</p>
+                    <p><strong>🍽️ Foods that tend to help:</strong> This is a good phase for lighter, fresh foods — your digestion tends to be more efficient and your body responds well to variety. Fermented foods like yogurt, kefir, kimchi, and sauerkraut support gut health and help the body metabolize estrogen properly. Zinc-rich foods like pumpkin seeds, chickpeas, and eggs support healthy follicle development. Leafy greens, berries, and whole grains give steady energy without spikes. Generally a great time to eat well since you'll actually feel like it.</p>
+                </div>
+                </div>
             </div>
-            <div class="timeline-container">
-                <div class="timeline-track" id="phaseTimeline"></div>
+
+            <div class="edu-card-full" style="border-left-color: #2affb6;">
+                <div class="edu-toggle-btn" onclick="toggleEduCard(this)">
+                    <h2>○ Phase 3: The Main Event (Ovulation)</h2>
+                    <span class="edu-chevron collapsed">▾</span>
+                </div>
+                <div class="edu-body collapsed">
+                <div class="edu-meta">Usually around Day 14, but varies with cycle length</div>
+                <div class="edu-text">
+                    <p><strong>What's happening:</strong> A surge of luteinizing hormone (LH) triggers the dominant follicle to release its egg. The egg travels down the fallopian tube toward the uterus. The egg itself only survives 12–24 hours — but sperm can survive inside the body for up to 5 days. This means the actual fertile window is about 6 days: the 5 days before ovulation and the day of.</p>
+                    <p><strong>How it feels:</strong> Energy and confidence usually peak around ovulation. Some people notice a one-sided twinge or mild cramp (called mittelschmerz) when the egg is released. Vaginal discharge often becomes clearer, stretchier, and more slippery around this time — similar to raw egg whites — which is a natural sign of peak fertility.</p>
+                    <p><strong>What to know:</strong> Ovulation doesn't always happen on Day 14 — that's just the average for a 28-day cycle. If your cycle runs longer or shorter, ovulation shifts accordingly. Stress, illness, and significant weight changes can delay or skip ovulation entirely.</p>
+                    <p><strong>🍽️ Foods that tend to help:</strong> Antioxidant-rich foods are your best friend here — berries, leafy greens, and colorful vegetables help protect the egg and support the LH surge. Fiber from foods like flaxseed, oats, and broccoli helps the body clear out excess estrogen so it doesn't recirculate. Light proteins like salmon, eggs, and legumes support hormone production. Since energy is high, this is a natural time to enjoy bigger or more varied meals without feeling sluggish.</p>
+                </div>
+                </div>
             </div>
-        </section>
 
-        <section class="log-panel">
-            <label>📅 Log Cycle Start</label>
-            <input type="date" id="startInput">
-            <label>🔚 End Date (optional)</label>
-            <input type="date" id="endInput">
-            <button class="btn-action" onclick="logEntry()">➕ Update Calendar</button>
-            <button id="updateBtn" class="btn-action btn-end" style="display:none;" onclick="updateLatest()">✖ End Current Period</button>
-        </section>
-    </div>
-
-    <!-- Insight card - shows ALL phases when clicked -->
-    <div id="insightCard">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
-            <h3 id="insightTitle" style="margin:0; font-size:1.3rem;">All Cycle Phases</h3>
-            <button onclick="closeInsights()" style="background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:5px 12px; border-radius:6px; cursor:pointer;">CLOSE ✕</button>
+            <div class="edu-card-full" style="border-left-color: #b77cff;">
+                <div class="edu-toggle-btn" onclick="toggleEduCard(this)">
+                    <h2>◑ Phase 4: The Wind-Down (Luteal)</h2>
+                    <span class="edu-chevron collapsed">▾</span>
+                </div>
+                <div class="edu-body collapsed">
+                <div class="edu-meta">Usually Days 15–28 (typically the most consistent phase at ~14 days)</div>
+                <div class="edu-text">
+                    <p><strong>What's happening:</strong> After the egg is released, the empty follicle transforms into something called the corpus luteum, which produces progesterone. Progesterone keeps the uterine lining thick and ready in case a fertilized egg needs to implant. If no pregnancy occurs, the corpus luteum breaks down, progesterone drops, and the lining starts to shed — beginning the next period.</p>
+                    <p><strong>How it feels (early luteal, Days 15–21):</strong> The first half of this phase is often fine. Progesterone has a calming effect and energy is still relatively stable. Some people feel focused and productive, good for detail-oriented tasks.</p>
+                    <p><strong>How it feels (late luteal / PMS, Days 22–28):</strong> As progesterone and estrogen both drop toward the end of this phase, PMS symptoms can appear — irritability, anxiety, low mood, bloating, breast tenderness, headaches, and disrupted sleep are all common. These symptoms typically show up in the last 1–2 weeks before the period and stop once it begins. If PMS is significantly affecting your daily life, it's worth talking to a doctor, as PMDD (a more severe form) is real and treatable.</p>
+                    <p><strong>🍽️ Foods that tend to help:</strong> This is the phase where cravings hit hardest, and there's a real reason for it — progesterone raises your metabolic rate slightly, meaning your body is actually burning more energy. Complex carbohydrates like sweet potato, oats, brown rice, and whole grain bread help stabilize the blood sugar crashes that drive mood swings and cravings. Calcium-rich foods like dairy, fortified plant milks, almonds, and sardines are backed by research for reducing PMS symptoms. Vitamin B6 (found in chicken, bananas, and potatoes) helps with mood and water retention. Cutting back on caffeine and alcohol in this phase genuinely helps — both worsen anxiety, disrupt sleep, and amplify PMS symptoms. Don't fight the cravings too hard; work with them where you can.</p>
+                </div>
+                </div>
+            </div>
         </div>
-        <div id="allPhasesContainer" class="all-phases-grid">
-            <!-- Dynamically filled with all 5 phases -->
-        </div>
-    </div>
-
-    <div id="historySection">
-        <div class="section-label">Cycle History</div>
-        <table>
-            <thead><tr><th>Timeline</th><th>Days</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody id="historyLog"></tbody>
-        </table>
-    </div>
-</main>
-
-<div id="jsonTerminal">
-    <h3>📁 Developer Terminal</h3>
-    <textarea id="jsonArea" placeholder="Edit JSON logs..."></textarea>
-    <div style="display:flex; gap:12px; margin-top:24px;">
-        <button class="tool-btn" style="flex:1; text-align:center" onclick="applyJson()">💾 Save Changes</button>
-        <button class="tool-btn" style="flex:1; text-align:center" onclick="toggleTerminal()">Cancel</button>
     </div>
 </div>
+
+<div id="printSummary"></div>
+
+<div id="jsonTerminal" class="terminal-panel"><h3 style="margin-bottom:20px;">📁 JSON editor</h3><textarea id="jsonArea" placeholder="Edit logs array..."></textarea><div style="display:flex; gap:12px; margin-top:24px;"><button class="icon-btn" style="flex:1;" onclick="applyJson()">💾 Save</button><button class="icon-btn" style="flex:1;" onclick="toggleTerminal()">Cancel</button></div></div>
 
 <script>
     let logs = JSON.parse(localStorage.getItem('periodLogs')) || [];
     let currentPhaseKey = 'MENSTRUAL';
+    let currentYear = new Date().getFullYear();
 
     const PHASES = {
-        MENSTRUAL: { 
-            name: 'Menstrual Phase', color: 'var(--neon-pink)', icon: '☾', hormone: 'Progesterone Drop',
-            mood: 'Turning inward, reflective, sometimes emotional. Honor your need for solitude.',
-            energy: 'Lowest point. Your body needs rest, iron-rich foods, and warmth.',
-            body: 'Cramping or bloating. Skin may be sensitive. Prioritize hydration.',
-            activity: 'Light stretching, journaling, meditation, and early nights.'
-        },
-        FOLLICULAR: { 
-            name: 'Follicular Phase', color: 'var(--accent-blue)', icon: '☽', hormone: 'Estrogen Rising',
-            mood: 'Outgoing, creative, and mentally sharp. Optimism returns.',
-            energy: 'Building steadily. You feel lighter and more capable every day.',
-            body: 'Skin starts to glow. Metabolism is slightly slower. Great time for nutrient-dense meals.',
-            activity: 'Starting new projects, social events, cardio, brainstorming.'
-        },
-        OVULATORY: { 
-            name: 'Ovulatory Phase', color: 'var(--ovulation)', icon: '○', hormone: 'LH Surge',
-            mood: 'Confident, flirtatious, high communication. Peak social drive.',
-            energy: 'Peak performance. You can handle high-intensity workouts and complex tasks.',
-            body: 'High libido. Peak fertility. Clear, bright skin. Heightened senses.',
-            activity: 'Public speaking, heavy lifting, networking, dating, bold moves.'
-        },
-        LUTEAL: { 
-            name: 'Luteal Phase', color: 'var(--luteal)', icon: '◑', hormone: 'Progesterone Peak',
-            mood: 'Nesting, detail-oriented, but possibly irritable. Embrace introspection.',
-            energy: 'Waning. You might feel "foggy" or easily winded. Rest when needed.',
-            body: 'Oily skin or breakouts. Increased appetite. Metabolism speeds up.',
-            activity: 'Organizing, deep cleaning, strength training, finishing tasks.'
-        },
-        LATE: { 
-            name: 'Late Cycle (PMS)', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed Cycle',
-            mood: 'Sensitivity, impatience, or anxiety. Listen to your boundaries.',
-            energy: 'Low resilience, fatigue may increase. Cancel non-essentials.',
-            body: 'Bloating, breast tenderness, headaches possible.',
-            activity: 'Hydration, light walking, restful yoga, self-compassion.'
-        }
+        MENSTRUAL: { name: 'Menstrual Phase', color: '#ff2d75', icon: '☾', hormone: 'Progesterone Drop', mood: 'Turning inward, reflective, sometimes emotional. Honor your need for solitude.', energy: 'Lowest point. Your body needs rest, iron-rich foods, and warmth.', body: 'Cramping or bloating. Skin may be sensitive. Prioritize hydration.', activity: 'Light stretching, journaling, meditation, and early nights.', food: "Spinach, lentils, red meat (iron to replace what's lost). Dark chocolate, bananas, nuts (magnesium for cramps). Ginger or turmeric tea to ease inflammation. Cravings are real — don't stress them." },
+        FOLLICULAR: { name: 'Follicular Phase', color: '#00d2ff', icon: '☽', hormone: 'Estrogen Rising', mood: 'Outgoing, creative, and mentally sharp. Optimism returns.', energy: 'Building steadily. You feel lighter and more capable every day.', body: 'Skin starts to glow as estrogen boosts collagen. Energy is steady and balanced.', activity: 'Starting new projects, social events, cardio, brainstorming.', food: "Yogurt, kimchi, kefir (fermented foods support estrogen metabolism). Pumpkin seeds, eggs, chickpeas (zinc for follicle development). Fresh fruits, leafy greens, whole grains. A great phase to eat varied and well." },
+        OVULATORY: { name: 'Ovulatory Phase', color: '#00ffaa', icon: '○', hormone: 'LH Surge', mood: 'Confident, flirtatious, high communication. Peak social drive.', energy: 'Peak performance. You can handle high-intensity workouts and complex tasks.', body: 'High libido. Peak fertility. Clear, bright skin.', activity: 'Public speaking, heavy lifting, networking, bold moves.', food: "Berries, leafy greens, colorful veg (antioxidants to support the egg). Flaxseed, broccoli, oats (fiber to clear excess estrogen). Salmon, eggs, legumes for protein. Energy is high — enjoy bigger meals without guilt." },
+        LUTEAL: { name: 'Luteal Phase', color: '#bc8cff', icon: '◑', hormone: 'Progesterone Peak', mood: 'Nesting, detail-oriented, but possibly irritable. Embrace introspection.', energy: 'Waning. You might feel "foggy" or easily winded. Rest when needed.', body: 'Oily skin or breakouts. Increased appetite. Metabolism speeds up.', activity: 'Organizing, deep cleaning, strength training, finishing tasks.', food: "Sweet potato, oats, brown rice (complex carbs stabilize blood sugar and curb mood swings). Dairy, almonds, sardines (calcium shown to reduce PMS). Bananas, chicken, potatoes (B6 for mood and bloating). Ease up on caffeine and alcohol — both amplify PMS symptoms noticeably." },
+        LATE: { name: 'Late Cycle (PMS)', color: '#cf2a2a', icon: '⚠', hormone: 'Delayed Cycle', mood: 'Sensitivity, impatience, or anxiety. Listen to your boundaries.', energy: 'Low resilience, fatigue may increase. Cancel non-essentials.', body: 'Bloating, breast tenderness, headaches possible.', activity: 'Hydration, light walking, restful yoga, self-compassion.', food: "Warm, comforting whole foods — soups, stews, complex carbs. Magnesium-rich snacks like nuts and dark chocolate. Cut back on salty and processed foods to reduce bloating. Herbal teas like chamomile or peppermint can soothe tension." }
     };
 
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div');
-        toast.className = 'toast-msg';
-        toast.innerText = msg;
-        toast.style.backgroundColor = isError ? '#e03a3a' : 'var(--accent-blue)';
-        toast.style.color = isError ? 'white' : 'black';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+    // ── Mobile monthly calendar ──────────────────────────────────
+    let mobMonth = new Date().getMonth();
+    let mobYear  = new Date().getFullYear();
+
+    function getPeriodDaySet() {
+        const s = new Set();
+        logs.forEach(l => {
+            const end = l.end ? new Date(l.end+'T00:00:00') : (l.trackedEnd ? new Date(l.trackedEnd+'T00:00:00') : new Date(l.start+'T00:00:00'));
+            let cur = new Date(l.start+'T00:00:00');
+            while(cur <= end) { s.add(cur.toISOString().split('T')[0]); cur.setDate(cur.getDate()+1); }
+        });
+        return s;
     }
 
-    document.getElementById('importBtnTrigger').addEventListener('click', () => {
-        document.getElementById('importFileInput').click();
-    });
-    document.getElementById('importFileInput').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            try {
-                const imported = JSON.parse(ev.target.result);
-                if (Array.isArray(imported)) {
-                    logs = imported;
-                    save();
-                    showToast(`✅ Imported ${logs.length} cycles`);
-                } else throw new Error();
-            } catch (err) {
-                showToast("❌ Invalid backup file", true);
-            }
-            e.target.value = '';
-        };
-        reader.readAsText(file);
-    });
-
-    function exportData() {
-        const blob = new Blob([JSON.stringify(logs, null, 2)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "cycle_backup.json";
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast("📁 Backup saved");
+    function renderMobileCalendar() {
+        const grid = document.getElementById('mobCalGrid');
+        const title = document.getElementById('mobCalTitle');
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        title.textContent = `${monthNames[mobMonth]} ${mobYear}`;
+        const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+        const periodDays = getPeriodDaySet();
+        const active = getActivePeriod();
+        const lastTracked = active && !active.end ? active.trackedEnd : null;
+        const today = new Date().toISOString().split('T')[0];
+        let html = days.map(d=>`<div class="mob-cal-header">${d}</div>`).join('');
+        const firstDay = new Date(mobYear, mobMonth, 1).getDay();
+        const daysInMonth = new Date(mobYear, mobMonth+1, 0).getDate();
+        for(let i=0;i<firstDay;i++) html+=`<div class="mob-cal-day empty"></div>`;
+        for(let d=1;d<=daysInMonth;d++){
+            const dateStr=`${mobYear}-${String(mobMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const isStart=logs.some(l=>l.start===dateStr);
+            const isEnd=logs.some(l=>l.end===dateStr);
+            const inPeriod=periodDays.has(dateStr);
+            let cls='mob-cal-day';
+            if(isStart) cls+=' active-start';
+            else if(isEnd) cls+=' active-end';
+            else if(inPeriod) cls+=' active-period';
+            if(lastTracked===dateStr) cls+=' last-tracked';
+            if(dateStr===today && !isStart && !isEnd) cls+=' today-marker';
+            html+=`<div class="${cls}" onclick="handleDayTap('${dateStr}')">${d}</div>`;
+        }
+        grid.innerHTML = html;
     }
 
-    function clearAllData() {
-        if (confirm("⚠️ Remove all cycle history? This cannot be undone.")) {
-            logs = [];
+    function shiftMonth(dir) {
+        mobMonth += dir;
+        if(mobMonth > 11) { mobMonth=0; mobYear++; }
+        if(mobMonth < 0)  { mobMonth=11; mobYear--; }
+        renderMobileCalendar();
+    }
+
+    // ── Print / share summary ────────────────────────────────────
+    function printSummary() {
+        if(!logs.length) { showToast('No cycles logged yet', true); return; }
+        const sorted = [...logs].sort((a,b)=>new Date(b.start)-new Date(a.start));
+        let totalGap=0, gapCount=0, totalDur=0, durCount=0;
+        for(let i=0;i<sorted.length;i++){
+            const l=sorted[i];
+            if(l.start&&l.end){ totalDur+=(new Date(l.end)-new Date(l.start))/86400000+1; durCount++; }
+            if(i<sorted.length-1&&sorted[i+1].end){ const g=(new Date(sorted[i].start)-new Date(sorted[i+1].start))/86400000; if(g>0){totalGap+=g;gapCount++;} }
+        }
+        const avgC=gapCount?Math.round(totalGap/gapCount):28;
+        const avgD=durCount?Math.round(totalDur/durCount):5;
+        const last=sorted[0];
+        const nextStart=new Date(last.start+'T00:00:00'); nextStart.setDate(nextStart.getDate()+avgC);
+        const rows=sorted.map(l=>{
+            const dur=l.end?Math.floor((new Date(l.end)-new Date(l.start))/86400000)+1:(l.trackedEnd?Math.floor((new Date(l.trackedEnd)-new Date(l.start))/86400000)+1:'—');
+            return `<tr><td>${formatDate(l.start)}</td><td>${formatDate(l.end)}</td><td>${dur} days</td><td>${l.end?'Complete':'Active'}</td></tr>`;
+        }).join('');
+        document.getElementById('printSummary').innerHTML=`
+            <div class="ps-title">🌙 Cycle Tracker Summary</div>
+            <div class="ps-subtitle">Generated ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+            <div class="ps-stats">
+                <div class="ps-stat"><label>Cycles tracked</label><span>${sorted.length}</span></div>
+                <div class="ps-stat"><label>Avg cycle length</label><span>${avgC} days</span></div>
+                <div class="ps-stat"><label>Avg period length</label><span>${avgD} days</span></div>
+                <div class="ps-stat"><label>Next predicted</label><span>${formatDate(nextStart.toISOString().split('T')[0])}</span></div>
+            </div>
+            <table class="ps-table">
+                <thead><tr><th>Start</th><th>End</th><th>Length</th><th>Status</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="ps-footer">Cycle Tracker · cycle data is stored locally on your device · not medical advice</div>`;
+        window.print();
+    }
+
+    // ── Theme toggle ─────────────────────────────────────────────
+    function toggleTheme() {
+        const isLight = document.body.classList.toggle('light');
+        document.getElementById('themeBtn').textContent = isLight ? '🌙' : '☀️';
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+
+    function toggleEduCard(btn) {
+        const body = btn.nextElementSibling;
+        const chevron = btn.querySelector('.edu-chevron');
+        body.classList.toggle('collapsed');
+        chevron.classList.toggle('collapsed');
+    }
+
+    function loadDemo() {
+        if (logs.length && !confirm("This will replace your current data with demo data. Continue?")) return;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        function daysAgo(n) { const d = new Date(today); d.setDate(d.getDate()-n); return d.toISOString().split('T')[0]; }
+        logs = [
+            { id: 1001, start: daysAgo(84), end: daysAgo(79) },
+            { id: 1002, start: daysAgo(56), end: daysAgo(51) },
+            { id: 1003, start: daysAgo(28), end: daysAgo(23) },
+            { id: 1004, start: daysAgo(3), end: null, trackedEnd: daysAgo(0) },
+        ];
+        save();
+        showToast("✨ Demo data loaded — explore the dashboard & calendar!");
+    }
+
+    function save() { localStorage.setItem('periodLogs', JSON.stringify(logs)); updateUI(); initYearSelector(); if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar(); }
+    function showToast(msg, isErr=false) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; t.style.background = isErr ? '#c72a4f' : '#1b2b4e'; document.body.appendChild(t); setTimeout(() => t.remove(), 2000); }
+    function formatDate(dateStr) { if(!dateStr) return "Ongoing"; const d = new Date(dateStr+"T00:00:00"); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+    function deleteEntry(id) { logs = logs.filter(l=>l.id !== id); save(); showToast("Removed"); }
+
+    function getActivePeriod() { return logs.find(l => !l.end); }
+
+    function deletePeriodByStartDate(startDate) {
+        const index = logs.findIndex(l => l.start === startDate);
+        if (index !== -1) { logs.splice(index, 1); save(); showToast(`🗑️ Period starting ${formatDate(startDate)} deleted.`); return true; }
+        return false;
+    }
+
+    function reactivatePeriodByEndDate(endDate) {
+        const period = logs.find(l => l.end === endDate);
+        if (period) {
+            period.end = null;
+            period.trackedEnd = endDate;
             save();
-            showToast("All data cleared.");
+            showToast(`↩️ Period reactivated (end date ${formatDate(endDate)} removed).`);
+            return true;
         }
+        return false;
     }
 
-    // Render all phases in the insight card
-    function renderAllPhases() {
-        const container = document.getElementById('allPhasesContainer');
-        if (!container) return;
-        const phaseOrder = ['MENSTRUAL', 'FOLLICULAR', 'OVULATORY', 'LUTEAL', 'LATE'];
-        let html = '';
-        for (let key of phaseOrder) {
-            const p = PHASES[key];
-            if (!p) continue;
-            html += `
-                <div class="phase-card" style="border-left-color: ${p.color};">
-                    <h4>
-                        <span style="color: ${p.color};">${p.name}</span>
-                        <span class="phase-hormone" style="color: ${p.color};">${p.hormone}</span>
-                    </h4>
-                    <div class="phase-details">
-                        <div class="phase-detail-item">
-                            <div class="detail-label">🧠 Mood & Mind</div>
-                            <div class="detail-text">${p.mood}</div>
-                        </div>
-                        <div class="phase-detail-item">
-                            <div class="detail-label">⚡ Energy Levels</div>
-                            <div class="detail-text">${p.energy}</div>
-                        </div>
-                        <div class="phase-detail-item">
-                            <div class="detail-label">💆 Skin & Body</div>
-                            <div class="detail-text">${p.body}</div>
-                        </div>
-                        <div class="phase-detail-item">
-                            <div class="detail-label">🎯 Best For</div>
-                            <div class="detail-text">${p.activity}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+    function handleDayTap(dateStr) {
+        // 1. Start date -> delete whole period
+        if (logs.some(l => l.start === dateStr)) {
+            deletePeriodByStartDate(dateStr);
+            return;
         }
-        container.innerHTML = html;
-    }
 
-    function toggleInsights() {
-        const card = document.getElementById('insightCard');
-        const historyDiv = document.getElementById('historySection');
-        if (card.style.display === 'block') {
-            card.style.display = 'none';
-            historyDiv.style.display = 'block';
-        } else {
-            // Render all phases before showing
-            renderAllPhases();
-            card.style.display = 'block';
-            historyDiv.style.display = 'block';
-            // Smooth scroll to card
-            setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        // 2. End date of a finished period -> remove end date (reactivate)
+        if (logs.some(l => l.end === dateStr)) {
+            reactivatePeriodByEndDate(dateStr);
+            return;
         }
-    }
 
-    function closeInsights() {
-        document.getElementById('insightCard').style.display = 'none';
+        const active = getActivePeriod();
+        
+        // 3. No active period -> start new one
+        if (!active) {
+            logs.unshift({ id: Date.now(), start: dateStr, end: null, trackedEnd: dateStr });
+            save();
+            showToast(`✨ Period started on ${formatDate(dateStr)} — tap later/earlier days to adjust.`);
+            return;
+        }
+
+        const startDate = active.start;
+        const currentLast = active.trackedEnd || active.start;
+        
+        if (dateStr < startDate) {
+            showToast("Cannot track before period start", true);
+            return;
+        }
+        
+        // 4. Tapped the last tracked day -> toggle end date
+        if (dateStr === currentLast) {
+            if (active.end === dateStr) {
+                active.end = null;
+                active.trackedEnd = dateStr;
+                save();
+                showToast(`↩️ Period active again (ended on ${formatDate(dateStr)} removed).`);
+            } else {
+                active.end = dateStr;
+                delete active.trackedEnd;
+                save();
+                showToast(`✅ Period ended on ${formatDate(dateStr)}. Tap this day again to reactivate.`);
+            }
+            return;
+        }
+        
+        // 5. Tapped date is after last tracked -> extend
+        if (dateStr > currentLast) {
+            if (active.end) {
+                showToast("Period is already ended. Tap its start date to delete, or tap the end date to reactivate.", true);
+                return;
+            }
+            active.trackedEnd = dateStr;
+            save();
+            showToast(`📆 Extended to ${formatDate(dateStr)}.`);
+            return;
+        }
+        
+        // 6. Tapped date is between start and last tracked -> shorten period to that day
+        if (dateStr > startDate && dateStr < currentLast) {
+            if (active.end) {
+                showToast("Cannot modify an ended period. Tap end date to reactivate first.", true);
+                return;
+            }
+            active.trackedEnd = dateStr;
+            save();
+            showToast(`✂️ Shortened period to ${formatDate(dateStr)}. Tap this day again to end.`);
+            return;
+        }
+        
+        showToast("Invalid action", true);
     }
 
     function logEntry() {
         const start = document.getElementById('startInput').value;
-        if (!start) { showToast("Select a start date", true); return; }
-        const end = document.getElementById('endInput').value || null;
-        logs.unshift({ id: Date.now(), start, end });
-        logs.sort((a, b) => new Date(b.start) - new Date(a.start));
-        save();
+        if (!start) { showToast("Pick a start date", true); return; }
+        const existingIdx = logs.findIndex(l=> l.start === start);
+        if (existingIdx !== -1) { logs.splice(existingIdx,1); save(); showToast("Entry removed"); }
+        else {
+            const endVal = document.getElementById('endInput').value || null;
+            const newLog = { id: Date.now(), start: start, end: endVal };
+            if(!endVal) newLog.trackedEnd = start;
+            logs.unshift(newLog);
+            save();
+            showToast("Cycle logged");
+        }
         document.getElementById('startInput').value = '';
         document.getElementById('endInput').value = '';
-        showToast("Cycle added ✓");
     }
 
     function updateLatest() {
         const end = document.getElementById('endInput').value;
-        if (!end) { showToast("Select an end date", true); return; }
-        if (logs.length === 0) return;
-        logs[0].end = end;
-        save();
-        document.getElementById('endInput').value = '';
-        showToast("Period ended ✓");
+        if(!end) { showToast("Pick end date",true); return; }
+        const active = getActivePeriod();
+        if(active) { active.end = end; delete active.trackedEnd; save(); document.getElementById('endInput').value = ''; showToast("Period ended"); }
+        else showToast("No active period", true);
     }
 
-    function save() {
-        localStorage.setItem('periodLogs', JSON.stringify(logs));
-        updateUI();
-    }
+    function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(logs,null,2)],{type:"application/json"})); a.download = "cycle_tracker_backup.json"; a.click(); showToast("Backup saved"); }
+    function clearAllData() { if(confirm("Delete everything?")) { logs = []; save(); showToast("Reset complete"); } }
+    function toggleTerminal() { const t = document.getElementById('jsonTerminal'); t.classList.toggle('open'); if(t.classList.contains('open')) document.getElementById('jsonArea').value = JSON.stringify(logs,null,2); }
+    function applyJson() { try { const parsed = JSON.parse(document.getElementById('jsonArea').value); if(!Array.isArray(parsed)) throw new Error(); logs = parsed; logs.forEach(l => { if(l.end === undefined) l.end = null; if(!l.end && l.start && !l.trackedEnd) l.trackedEnd = l.start; }); save(); toggleTerminal(); showToast("JSON applied"); } catch(e) { alert("Invalid JSON"); } }
 
-    function toggleTerminal() {
-        const term = document.getElementById('jsonTerminal');
-        term.classList.toggle('open');
-        if (term.classList.contains('open')) {
-            document.getElementById('jsonArea').value = JSON.stringify(logs, null, 2);
-        }
-    }
+    function renderAllPhases() { const container = document.getElementById('allPhasesContainer'); let html = ''; for (let key of ['MENSTRUAL','FOLLICULAR','OVULATORY','LUTEAL','LATE']) { const p = PHASES[key]; html += `<div class="phase-detail-card" style="border-left-color: ${p.color};"><h4><span style="color:${p.color};">${p.name}</span> · ${p.hormone}</h4><div><strong>🧠 Mood & Mind:</strong> ${p.mood}</div><div><strong>⚡ Energy Levels:</strong> ${p.energy}</div><div><strong>💆 Skin & Body:</strong> ${p.body}</div><div><strong>🎯 Best For:</strong> ${p.activity}</div><div><strong>🍽️ Foods That Help:</strong> ${p.food}</div></div>`; } container.innerHTML = html; }
+    function toggleInsights() { const card = document.getElementById('insightCard'); if(card.style.display === 'block') card.style.display = 'none'; else { renderAllPhases(); card.style.display = 'block'; } }
+    function closeInsights() { document.getElementById('insightCard').style.display = 'none'; }
 
-    function applyJson() {
-        try {
-            const parsed = JSON.parse(document.getElementById('jsonArea').value);
-            if (!Array.isArray(parsed)) throw new Error();
-            logs = parsed;
-            save();
-            toggleTerminal();
-            showToast("Terminal changes applied.");
-        } catch (e) {
-            alert("Invalid JSON. Must be an array of cycle objects.");
-        }
-    }
+    function initYearSelector() { const sel = document.getElementById('yearSelect'); sel.innerHTML = ''; const yearsSet = new Set(); logs.forEach(l=>{ if(l.start) yearsSet.add(new Date(l.start+"T00:00:00").getFullYear()); if(l.end) yearsSet.add(new Date(l.end+"T00:00:00").getFullYear()); }); yearsSet.add(currentYear); [...yearsSet].sort((a,b)=>b-a).forEach(y=>{ const opt = document.createElement('option'); opt.value=y; opt.text=y; if(y===currentYear) opt.selected=true; sel.appendChild(opt); }); }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return "Ongoing";
-        const d = new Date(dateStr + "T00:00:00");
-        if (isNaN(d.getTime())) return "Invalid";
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    }
+    function renderCalendar() {
+        renderMobileCalendar();
+        currentYear = parseInt(document.getElementById('yearSelect').value);
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        let header = `<div class="cal-row"><div class="cal-cell"></div>`;
+        for(let d=1;d<=31;d++) header+=`<div class="cal-cell" style="background:transparent;">${d}</div>`;
+        header+=`</div>`; grid.innerHTML = header;
 
-    function deleteEntry(id) {
-        if (confirm("Remove this cycle?")) {
-            logs = logs.filter(l => l.id !== id);
-            save();
-            showToast("Entry removed.");
-        }
+        const periodDays = new Set();
+        logs.forEach(l => {
+            if(l.end) {
+                let cur = new Date(l.start+"T00:00:00");
+                const endd = new Date(l.end+"T00:00:00");
+                while(cur <= endd) { periodDays.add(cur.toISOString().split('T')[0]); cur.setDate(cur.getDate()+1); }
+            } else if(l.start) {
+                let startDate = new Date(l.start+"T00:00:00");
+                let endRange = l.trackedEnd ? new Date(l.trackedEnd+"T00:00:00") : new Date(l.start+"T00:00:00");
+                let cur = new Date(startDate);
+                while(cur <= endRange) { periodDays.add(cur.toISOString().split('T')[0]); cur.setDate(cur.getDate()+1); }
+            }
+        });
+
+        const active = getActivePeriod();
+        const lastTracked = active && !active.end ? active.trackedEnd : null;
+
+        months.forEach((m,idx)=>{
+            let row=`<div class="cal-row"><div class="cal-cell">${m}</div>`;
+            const daysInMonth = new Date(currentYear, idx+1, 0).getDate();
+            for(let d=1;d<=31;d++){
+                if(d>daysInMonth) row+=`<div class="cal-cell"></div>`;
+                else {
+                    const dateStr=`${currentYear}-${String(idx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    let addClass = "cal-cell day-cell";
+                    const isStart = logs.some(l=>l.start===dateStr);
+                    const isEnd = logs.some(l=>l.end===dateStr);
+                    const inPeriod = periodDays.has(dateStr);
+                    if(isStart) addClass+=" active-start";
+                    if(isEnd && !isStart) addClass+=" active-end";
+                    if(inPeriod && !isStart && !isEnd) addClass+=" active-period";
+                    if(lastTracked === dateStr) addClass+=" last-tracked";
+                    row+=`<div class="${addClass}" onclick="handleDayTap('${dateStr}')"></div>`;
+                }
+            }
+            row+=`</div>`; grid.innerHTML+=row;
+        });
     }
 
     function updateUI() {
-        const logContainer = document.getElementById('historyLog');
-        logContainer.innerHTML = '';
-        if (logs.length === 0) {
-            document.getElementById('avgCycle').innerText = "28 Days";
-            document.getElementById('avgDuration').innerText = "5 Days";
-            document.getElementById('countdownDisplay').innerText = "📆 Add first log";
-            document.getElementById('phaseName').innerText = "Log your period start";
-            document.getElementById('nextPeriodDate').innerText = "—";
-            document.getElementById('nextEndDate').innerText = "—";
-            document.getElementById('updateBtn').style.display = "none";
-            document.getElementById('hormoneMarker').innerHTML = "System Ready ⓘ";
-            document.getElementById('phaseIcon').innerText = '☾';
-            return;
-        }
-
-        let totalCycleGap = 0, cycleCount = 0;
-        let totalDuration = 0, durCount = 0;
-        logs.forEach((log, i) => {
-            if (log.start && log.end) {
-                const dur = (new Date(log.end + "T00:00:00") - new Date(log.start + "T00:00:00")) / 86400000 + 1;
-                totalDuration += dur;
-                durCount++;
-            }
-            if (i < logs.length - 1) {
-                const gap = (new Date(logs[i].start + "T00:00:00") - new Date(logs[i+1].start + "T00:00:00")) / 86400000;
-                if (gap > 0) { totalCycleGap += gap; cycleCount++; }
-            }
-        });
-
-        const avgC = cycleCount > 0 ? Math.round(totalCycleGap / cycleCount) : 28;
-        const avgD = durCount > 0 ? Math.round(totalDuration / durCount) : 5;
-        document.getElementById('avgCycle').innerText = avgC + " Days";
-        document.getElementById('avgDuration').innerText = avgD + " Days";
-
-        const lastEntry = logs[0];
-        const lastStart = new Date(lastEntry.start + "T00:00:00");
-        const today = new Date(); today.setHours(0,0,0,0);
-        const dayFromStart = Math.floor((today - lastStart) / 86400000) + 1;
-        let activePeriod = (!lastEntry.end) || (today >= lastStart && today <= new Date(lastEntry.end + "T00:00:00"));
-
-        const countdownEl = document.getElementById('countdownDisplay');
-        if (activePeriod) {
-            currentPhaseKey = 'MENSTRUAL';
-            countdownEl.innerText = "Day " + dayFromStart + " of period";
-        } else if (dayFromStart > avgC) {
-            currentPhaseKey = 'LATE';
-            countdownEl.innerText = (dayFromStart - avgC) + " Days Late";
-        } else {
-            const nextStart = new Date(lastStart); nextStart.setDate(lastStart.getDate() + avgC);
-            const daysLeft = Math.ceil((nextStart - today) / 86400000);
-            countdownEl.innerText = "Next in " + Math.max(0, daysLeft) + " Days";
-            if (dayFromStart <= Math.floor(avgC - 16)) currentPhaseKey = 'FOLLICULAR';
-            else if (dayFromStart <= Math.floor(avgC - 12)) currentPhaseKey = 'OVULATORY';
-            else currentPhaseKey = 'LUTEAL';
-        }
-
-        const p = PHASES[currentPhaseKey] || PHASES.LUTEAL;
-        document.getElementById('phaseIcon').innerText = p.icon;
-        document.getElementById('phaseIcon').style.setProperty('--phase-color', p.color);
-        document.getElementById('phaseName').innerText = p.name;
-        document.getElementById('hormoneMarker').innerHTML = p.hormone + " ⓘ";
-        document.getElementById('hormoneMarker').style.setProperty('--phase-color', p.color);
-
-        const nextCycleStart = new Date(lastStart); nextCycleStart.setDate(lastStart.getDate() + avgC);
-        if (activePeriod) {
-            document.getElementById('startPredLabel').innerText = "Current Period Start";
-            document.getElementById('nextPeriodDate').innerText = formatDate(lastEntry.start);
-            const estEnd = new Date(lastStart); estEnd.setDate(lastStart.getDate() + (avgD - 1));
-            document.getElementById('endPredLabel').innerText = "Est. End Date";
-            document.getElementById('nextEndDate').innerText = formatDate(estEnd.toISOString().split('T')[0]);
-        } else {
-            document.getElementById('startPredLabel').innerText = "Expected Next Period";
-            document.getElementById('nextPeriodDate').innerText = formatDate(nextCycleStart.toISOString().split('T')[0]);
-            const nextEnd = new Date(nextCycleStart); nextEnd.setDate(nextCycleStart.getDate() + (avgD - 1));
-            document.getElementById('endPredLabel').innerText = "Est. End Date";
-            document.getElementById('nextEndDate').innerText = formatDate(nextEnd.toISOString().split('T')[0]);
-        }
-
-        const timelineDiv = document.getElementById('phaseTimeline');
-        timelineDiv.innerHTML = '';
-        const phasePoints = [
-            { label: 'Menstrual', key: 'MENSTRUAL', date: new Date(lastStart) },
-            { label: 'Follicular', key: 'FOLLICULAR', date: new Date(lastStart.getTime() + avgD * 86400000) },
-            { label: 'Ovulation', key: 'OVULATORY', date: new Date(lastStart.getTime() + Math.max(avgC - 14, 6) * 86400000) },
-            { label: 'Luteal', key: 'LUTEAL', date: new Date(lastStart.getTime() + Math.max(avgC - 10, 12) * 86400000) },
-            { label: 'Next Cycle', key: 'NEXT', date: new Date(lastStart.getTime() + avgC * 86400000) }
-        ];
-        phasePoints.forEach(point => {
-            const isPassed = today > point.date;
-            const isActive = (currentPhaseKey === point.key) || (point.key === 'NEXT' && currentPhaseKey === 'LATE');
-            const color = PHASES[point.key === 'NEXT' ? 'MENSTRUAL' : point.key]?.color || 'var(--accent-blue)';
-            timelineDiv.innerHTML += `
-                <div class="timeline-point ${isActive ? 'active' : ''} ${isPassed ? 'passed' : ''}" style="--dot-color: ${color}">
-                    <div class="dot"></div>
-                    <span class="tp-label">${point.label}</span>
-                    <span class="tp-date">${formatDate(point.date.toISOString().split('T')[0])}</span>
-                </div>
-            `;
-        });
-
+        const tbody = document.getElementById('historyLog'); tbody.innerHTML = '';
+        if(!logs.length) { document.getElementById('avgCycle').innerText="28 Days"; document.getElementById('avgDuration').innerText="5 Days"; document.getElementById('countdownDisplay').innerText="📆 Add first log"; document.getElementById('phaseName').innerText="Log your period start"; document.getElementById('nextPeriodDate').innerText="—"; document.getElementById('nextEndDate').innerText="—"; document.getElementById('updateBtn').style.display="none"; return; }
+        let totalGap=0, gapCount=0, totalDur=0, durCount=0;
+        const sorted = [...logs].sort((a,b)=>new Date(b.start)-new Date(a.start));
+        for(let i=0;i<sorted.length;i++){ const log=sorted[i]; if(log.start && log.end){ const dur = (new Date(log.end)-new Date(log.start))/86400000+1; totalDur+=dur; durCount++; } if(i<sorted.length-1 && sorted[i+1].end){ const gap = (new Date(sorted[i].start)-new Date(sorted[i+1].start))/86400000; if(gap>0){ totalGap+=gap; gapCount++; } } }
+        const avgC = gapCount?Math.round(totalGap/gapCount):28; const avgD = durCount?Math.round(totalDur/durCount):5;
+        document.getElementById('avgCycle').innerText=avgC+" Days"; document.getElementById('avgDuration').innerText=avgD+" Days";
+        const last=sorted[0]; const lastStart=new Date(last.start+"T00:00:00"); const today=new Date(); today.setHours(0,0,0,0);
+        let activePeriod = (!last.end);
+        let dayFromStart = 1;
+        if(activePeriod) { let trackEnd = last.trackedEnd ? new Date(last.trackedEnd+"T00:00:00") : lastStart; dayFromStart = Math.floor((trackEnd - lastStart)/86400000)+1; } else if(last.end) { dayFromStart = Math.floor((new Date(last.end) - lastStart)/86400000)+1; } else { dayFromStart = Math.floor((today - lastStart)/86400000)+1; }
+        if(activePeriod) currentPhaseKey='MENSTRUAL'; else if(dayFromStart>avgC) currentPhaseKey='LATE'; else { if(dayFromStart<=Math.floor(avgC-16)) currentPhaseKey='FOLLICULAR'; else if(dayFromStart<=Math.floor(avgC-12)) currentPhaseKey='OVULATORY'; else currentPhaseKey='LUTEAL'; }
+        const p=PHASES[currentPhaseKey]; document.getElementById('phaseIcon').innerText=p.icon; document.getElementById('phaseIcon').style.setProperty('--phase-glow',p.color); document.getElementById('phaseName').innerText=p.name; document.getElementById('hormoneMarker').innerHTML=p.hormone+" ⓘ"; document.getElementById('hormoneMarker').style.setProperty('--phase-glow',p.color);
+        if(activePeriod){ document.getElementById('countdownDisplay').innerText=`Day ${dayFromStart} of period`; document.getElementById('startPredLabel').innerText="Current start"; document.getElementById('nextPeriodDate').innerText=formatDate(last.start); const estEnd=new Date(lastStart); estEnd.setDate(lastStart.getDate()+(avgD-1)); document.getElementById('nextEndDate').innerText=formatDate(estEnd.toISOString().split('T')[0]); }
+        else{ const nextStart=new Date(lastStart); nextStart.setDate(lastStart.getDate()+avgC); document.getElementById('countdownDisplay').innerText=`Next in ${Math.max(0,Math.ceil((nextStart-today)/86400000))} Days`; document.getElementById('startPredLabel').innerText="Expected next"; document.getElementById('nextPeriodDate').innerText=formatDate(nextStart.toISOString().split('T')[0]); const nextEnd=new Date(nextStart); nextEnd.setDate(nextStart.getDate()+(avgD-1)); document.getElementById('nextEndDate').innerText=formatDate(nextEnd.toISOString().split('T')[0]); }
+        const timelineDiv=document.getElementById('phaseTimeline'); timelineDiv.innerHTML=''; const points=[{label:'Menstrual',key:'MENSTRUAL',date:new Date(lastStart)},{label:'Follicular',key:'FOLLICULAR',date:new Date(lastStart.getTime()+avgD*86400000)},{label:'Ovulation',key:'OVULATORY',date:new Date(lastStart.getTime()+Math.max(avgC-14,6)*86400000)},{label:'Luteal',key:'LUTEAL',date:new Date(lastStart.getTime()+Math.max(avgC-10,12)*86400000)},{label:'Next Cycle',key:'NEXT',date:new Date(lastStart.getTime()+avgC*86400000)}];
+        const phaseOrder=['MENSTRUAL','FOLLICULAR','OVULATORY','LUTEAL','NEXT'];
+        const activeIdx=phaseOrder.indexOf(currentPhaseKey==='LATE'?'NEXT':currentPhaseKey);
+        const phaseBounds={MENSTRUAL:[0,avgD],FOLLICULAR:[avgD,avgC-14],OVULATORY:[avgC-14,avgC-10],LUTEAL:[avgC-10,avgC],NEXT:[avgC,avgC+5]};
+        const [phStart,phEnd]=phaseBounds[currentPhaseKey]||[0,1];
+        const phaseProgress=Math.min(100,Math.max(0,Math.round(((dayFromStart-phStart)/(phEnd-phStart))*100)));
+        points.forEach((pt,i)=>{ const isActive=(currentPhaseKey===pt.key)||(pt.key==='NEXT'&&currentPhaseKey==='LATE'); const isPassed=i<activeIdx; const dotColor=PHASES[pt.key==='NEXT'?'MENSTRUAL':pt.key]?.color||'#00d2ff'; const progressStyle=isActive?`--phase-progress:${phaseProgress}%;`:''; timelineDiv.innerHTML+=`<div class="tl-point ${isActive?'active':isPassed?'passed':''}" style="--phase-dot:${dotColor};${progressStyle}"><div class="tl-dot"></div><div class="tl-label">${pt.label}</div><div class="tl-date">${formatDate(pt.date.toISOString().split('T')[0])}</div></div>`; });
         document.getElementById('updateBtn').style.display = (!logs[0]?.end && logs.length) ? "block" : "none";
-
-        logs.forEach(log => {
-            const row = document.createElement('tr');
-            const durDays = log.end ? Math.floor((new Date(log.end + "T00:00:00") - new Date(log.start + "T00:00:00")) / 86400000) + 1 : "Ongoing";
-            row.innerHTML = `
-                <td class="date-range">${formatDate(log.start)} — ${formatDate(log.end)}</td>
-                <td>${durDays}</td>
-                <td><span class="status-tag" style="color:${log.end ? 'var(--text-dim)' : 'var(--neon-pink)'}">${log.end ? 'Finished' : 'Active'}</span></td>
-                <td style="text-align:right;">
-                    <button class="delete-x" onclick="deleteEntry(${log.id})" title="Delete">✕</button>
-                </td>
-            `;
-            logContainer.appendChild(row);
-        });
+        logs.forEach(log=>{ const durDays=log.end?Math.floor((new Date(log.end)-new Date(log.start))/86400000)+1:(log.trackedEnd?Math.floor((new Date(log.trackedEnd)-new Date(log.start))/86400000)+1:"Ongoing"); const row=`<tr><td>${formatDate(log.start)} — ${formatDate(log.end)}</td><td>${durDays}</td><td><span style="color:${log.end?'#aac9ff':'#ff86a8'};">${log.end?'Finished':'Active'}</span></td><td><button class="delete-badge" onclick="deleteEntry(${log.id})">✕ Remove</button></td>`; tbody.innerHTML+=row; });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('jsonTerminal').classList.remove('open');
-        updateUI();
-        document.getElementById('insightCard').style.display = 'none';
+    function switchView(view) { document.querySelectorAll('.view-pane').forEach(p=>p.classList.remove('active')); document.getElementById(`view-${view}`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); event.currentTarget.classList.add('active'); if(view==='calendar') renderCalendar(); }
+    document.getElementById('importBtnTrigger').addEventListener('click',()=>document.getElementById('importFileInput').click()); 
+    document.getElementById('importFileInput').addEventListener('change',(e)=>{ const file=e.target.files[0]; if(file){ const reader=new FileReader(); reader.onload=ev=>{ try{ const imp=JSON.parse(ev.target.result); if(Array.isArray(imp)){ logs=imp; logs.forEach(l=>{ if(l.end===undefined) l.end=null; if(!l.end && l.start && !l.trackedEnd) l.trackedEnd=l.start; }); save(); showToast("Import success"); } else throw new Error(); } catch(err){ showToast("Invalid backup",true); } e.target.value=''; }; reader.readAsText(file); } });
+    document.getElementById('devZone').addEventListener('click',toggleTerminal);
+    document.addEventListener('DOMContentLoaded',()=>{
+        logs.forEach(l=>{ if(!l.end && l.start && !l.trackedEnd) l.trackedEnd=l.start; });
+        if(localStorage.getItem('theme')==='light') { document.body.classList.add('light'); document.getElementById('themeBtn').textContent='🌙'; }
+        initYearSelector(); updateUI(); renderMobileCalendar();
     });
-    updateUI();
 </script>
 </body>
 </html>
