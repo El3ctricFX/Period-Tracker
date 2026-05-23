@@ -358,7 +358,7 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
         <div class="nav-links">
             <button class="nav-btn active" onclick="switchView('dashboard')">Dashboard</button>
             <button class="nav-btn" onclick="switchView('calendar')">Calendar</button>
-            <button class="nav-btn" onclick="switchView('education')">Information</button>
+            <button class="nav-btn" onclick="switchView('information')">Information</button>
         </div>
         <div class="stats-mini"><div class="stat-badge"><span>Avg cycle</span><span id="avgCycle">--</span></div><div class="stat-badge"><span>Period length</span><span id="avgDuration">--</span></div></div>
         
@@ -412,7 +412,7 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
         </p>
     </div>
 
-    <div id="view-education" class="view-pane">
+    <div id="view-information" class="view-pane">
         <div class="edu-container-full">
             <h1 style="font-size:2.2rem; margin-bottom:12px;">How the Cycle Works</h1>
             <div class="disclaimer"><strong>⚠️ Heads up before you read:</strong> I'm not a doctor, nurse, or anything close — just a guy who built this for a friend. The information in this app was researched and written with the help of AI, then reviewed and approved by female friends who confirmed it felt accurate and useful. That said, it's still a starting point, not medical advice. Bodies vary, cycles vary, and if something feels off or you have real concerns, please look it up from proper sources or talk to an actual healthcare provider. Don't take a random guy's AI-assisted app as the final word.</div>
@@ -882,7 +882,7 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
         logs.forEach(log=>{ const durDays=log.end?Math.floor((new Date(log.end)-new Date(log.start))/86400000)+1:(log.trackedEnd?Math.floor((new Date(log.trackedEnd)-new Date(log.start))/86400000)+1:"Ongoing"); const row=`<tr><td>${formatDate(log.start)} — ${formatDate(log.end)}</td><td>${durDays}</td><td><span style="color:${log.end?'#aac9ff':'#ff86a8'};">${log.end?'Finished':'Active'}</span></td><td><button class="delete-badge" onclick="deleteEntry(${log.id})">✕ Remove</button></td>`; tbody.innerHTML+=row; });
     }
 
-    function switchView(view) { document.querySelectorAll('.view-pane').forEach(p=>p.classList.remove('active')); document.getElementById(`view-${view}`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); event.currentTarget.classList.add('active'); if(view==='calendar') renderCalendar(); }
+    function switchView(view) { document.querySelectorAll('.view-pane').forEach(p=>p.classList.remove('active')); document.getElementById(`view-${view}`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('onclick').includes(`'${view}'`))); if(view==='calendar') renderCalendar(); history.replaceState(null,'',view==='dashboard'?location.pathname:'#'+view); }
     document.getElementById('importBtnTrigger').addEventListener('click',()=>document.getElementById('importFileInput').click()); 
     document.getElementById('importFileInput').addEventListener('change',(e)=>{ const file=e.target.files[0]; if(file){ const reader=new FileReader(); reader.onload=ev=>{ try{ const imp=JSON.parse(ev.target.result); if(Array.isArray(imp)){ logs=imp; logs.forEach(l=>{ if(l.end===undefined) l.end=null; if(!l.end && l.start && !l.trackedEnd) l.trackedEnd=l.start; }); save(); showToast("Import success"); } else throw new Error(); } catch(err){ showToast("Invalid backup",true); } e.target.value=''; }; reader.readAsText(file); } });
     document.getElementById('devZone').addEventListener('click',toggleTerminal);
@@ -898,6 +898,8 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
             currentYear = mobYear;
             renderMobileCalendar();
         }
+        const startHash = location.hash.slice(1);
+        if (['calendar','information'].includes(startHash)) switchView(startHash);
     });
 </script>
 </body>
