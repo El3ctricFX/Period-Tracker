@@ -294,6 +294,24 @@
         body.light textarea { background: #fff; border-color: #d0d8ea; color: #1a1f3a; }
         body.light .toast { background: rgba(255,255,255,0.96); color: #1a1f3a; border-color: #ffb3c7; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         body.light #calendarHint { color: #7a8aaa; }
+        body.light .prediction-meta {
+            background: rgba(0,0,0,0.05);
+            border-left-color: var(--phase-glow, #ff6f91);
+        }
+body.light .confidence-badge {
+    background: rgba(0,0,0,0.07);
+    color: #1a1f3a;
+}
+body.light .range-text {
+    color: #2a2f4a;
+}
+body.light .disclaimer-note {
+    color: #5a6a8a;
+    border-top-color: rgba(0,0,0,0.1);
+}
+body.light .disclaimer-note strong {
+    color: #c04900;
+}
         /* Information section: colorful headers matching each phase */
 .edu-card-full[style*="border-left-color: #ff4d7a"] h2 {
     color: #ff7b9e;
@@ -349,6 +367,51 @@ body.light .edu-card-full[style*="border-left-color: #2affb6"] .edu-chevron {
 body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
     color: #8a3fcf;
 }
+
+.prediction-meta {
+    margin: 16px 0 8px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 28px;
+    padding: 12px 20px;
+    border-left: 4px solid var(--phase-glow, #ff6f91);
+    font-size: 0.78rem;
+}
+.confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+.confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 40px;
+    padding: 4px 14px;
+    font-weight: 600;
+}
+.range-text {
+    font-weight: 500;
+    color: #e2eaff;
+}
+.disclaimer-note {
+    font-size: 0.7rem;
+    margin-top: 8px;
+    color: #b8c7ff;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 8px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.disclaimer-note strong {
+    color: #ffb992;
+}
+
+
     </style>
 </head>
 <body>
@@ -380,6 +443,7 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
             <div class="hero-card">
                 <div class="phase-top"><div class="phase-ring" id="phaseIcon" style="--phase-glow: var(--phase-color)">☾</div><div class="phase-title"><div class="marker-chip" id="hormoneMarker" style="--phase-glow: var(--phase-color)" onclick="toggleInsights()">ⓘ System Info</div><h2 id="countdownDisplay">Ready</h2><div class="phase-sub" id="phaseName">Awaiting entry</div></div></div>
                 <div class="predict-row"><div class="pred-item"><div class="pred-label-sm" id="startPredLabel">Next start</div><div class="pred-date-lg" id="nextPeriodDate">—</div></div><div class="pred-item"><div class="pred-label-sm" id="endPredLabel">Est. end</div><div class="pred-date-lg" id="nextEndDate">—</div></div></div>
+                <div id="predictionMeta" class="prediction-meta"></div>
                 <div class="timeline-strip"><div class="timeline-flex" id="phaseTimeline"></div></div>
             </div>
             <div class="log-card">
@@ -637,6 +701,9 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
     function save() { localStorage.setItem('periodLogs', JSON.stringify(logs)); updateUI(); initYearSelector(); if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar(); }
     function showToast(msg, isErr=false) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; t.style.background = isErr ? '#c72a4f' : '#1b2b4e'; document.body.appendChild(t); setTimeout(() => t.remove(), 2000); }
     function formatDate(dateStr) { if(!dateStr) return "Ongoing"; const d = new Date(dateStr+"T00:00:00"); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+    function formatShort(date) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
     function deleteEntry(id) { logs = logs.filter(l=>l.id !== id); save(); showToast("Removed"); }
 
     function getActivePeriod() { return logs.find(l => !l.end); }
@@ -855,136 +922,205 @@ body.light .edu-card-full[style*="border-left-color: #b77cff"] .edu-chevron {
         });
     }
 
-    function updateUI() {
-    const tbody = document.getElementById('historyLog'); 
-    tbody.innerHTML = '';
-    
-    // 1. Handle empty state
-    if(!logs.length) { 
-        document.getElementById('avgCycle').innerText="28 Days"; 
-        document.getElementById('avgDuration').innerText="5 Days"; 
-        document.getElementById('countdownDisplay').innerText="📆 Add first log"; 
-        document.getElementById('phaseName').innerText="Log your period start"; 
-        document.getElementById('nextPeriodDate').innerText="—"; 
-        document.getElementById('nextEndDate').innerText="—"; 
-        document.getElementById('updateBtn').style.display="none"; 
-        return; 
-    }
-    
-    // 2. Calculate averages
-    let totalGap=0, gapCount=0, totalDur=0, durCount=0;
-    const sorted = [...logs].sort((a,b)=>new Date(b.start)-new Date(a.start));
-    
-    for(let i=0; i<sorted.length; i++){ 
-        const log=sorted[i]; 
-        if(log.start && log.end){ 
-            const dur = (new Date(log.end)-new Date(log.start))/86400000+1; 
-            totalDur+=dur; 
-            durCount++; 
-        } 
-        if(i<sorted.length-1 && sorted[i+1].end){ 
-            const gap = (new Date(sorted[i].start)-new Date(sorted[i+1].start))/86400000; 
-            if(gap>0){ totalGap+=gap; gapCount++; } 
-        } 
-    }
-    
-    const avgC = gapCount ? Math.round(totalGap/gapCount) : 28; 
-    const avgD = durCount ? Math.round(totalDur/durCount) : 5;
-    document.getElementById('avgCycle').innerText=avgC+" Days"; 
-    document.getElementById('avgDuration').innerText=avgD+" Days";
-    
-    // 3. Establish dates
-    const last = sorted[0]; 
-    const lastStart = new Date(last.start+"T00:00:00"); 
-    const today = new Date(); 
-    today.setHours(0,0,0,0);
-    
-    let activePeriod = (!last.end);
-    
-    // --- 🛠️ THE BUG FIX STARTS HERE ---
-    // Calculate the current day of the entire cycle
-    let cycleDay = Math.floor((today - lastStart)/86400000)+1; 
-    
-    // Calculate period duration (only used if currently bleeding)
-    let periodDayLength = 1; 
-    if(activePeriod) { 
-        let trackEnd = last.trackedEnd ? new Date(last.trackedEnd+"T00:00:00") : lastStart; 
-        periodDayLength = Math.floor((trackEnd - lastStart)/86400000)+1; 
-    }
-    
-    // Calculate Phase using the accurate cycleDay
-    if(activePeriod) {
-        currentPhaseKey='MENSTRUAL'; 
-    } else if(cycleDay>avgC) {
-        currentPhaseKey='LATE'; 
-    } else { 
-        if(cycleDay <= Math.floor(avgC-16)) currentPhaseKey='FOLLICULAR'; 
-        else if(cycleDay <= Math.floor(avgC-12)) currentPhaseKey='OVULATORY'; 
-        else currentPhaseKey='LUTEAL'; 
-    }
-    // --- 🛠️ THE BUG FIX ENDS HERE ---
+function updateUI() {
+        const tbody = document.getElementById('historyLog'); 
+        tbody.innerHTML = '';
+        
+        // 1. Handle empty state
+        if(!logs.length) { 
+            document.getElementById('avgCycle').innerText="28 Days"; 
+            document.getElementById('avgDuration').innerText="5 Days"; 
+            document.getElementById('countdownDisplay').innerText="📆 Add first log"; 
+            document.getElementById('phaseName').innerText="Log your period start"; 
+            document.getElementById('nextPeriodDate').innerText="—"; 
+            document.getElementById('nextEndDate').innerText="—"; 
+            document.getElementById('updateBtn').style.display="none"; 
+            return; 
+        }
+        
+        // 2. Extract raw historical intervals (Newest to Oldest)
+        let gaps = [];
+        let durations = [];
+        const sorted = [...logs].sort((a,b)=>new Date(b.start)-new Date(a.start));
+        
+        for(let i=0; i<sorted.length; i++){ 
+            const log=sorted[i]; 
+            if(log.start && log.end){ 
+                const dur = Math.round((new Date(log.end)-new Date(log.start))/86400000)+1; 
+                durations.push(dur);
+            } 
+            if(i<sorted.length-1 && sorted[i+1].start){ 
+                const d1 = new Date(sorted[i].start+"T00:00:00"); 
+                const d2 = new Date(sorted[i+1].start+"T00:00:00"); 
+                const gap = Math.round((d1-d2)/86400000); 
+                if(gap >= 14 && gap <= 60) { gaps.push(gap); } 
+            } 
+        }
+        
+        // 3. Damped Momentum Engine (The "Goldilocks" approach)
+        let avgC = 28;
+        if (gaps.length === 1) {
+            avgC = gaps[0];
+        } else if (gaps.length >= 2) {
+            // Calculate stability
+            const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+            const stdDev = Math.sqrt(gaps.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / gaps.length);
+            
+            if (stdDev > 4.5) {
+                // Highly erratic: Fall back to a Median to ignore extreme outliers
+                const recent = gaps.slice(0, 3).sort((a,b)=>a-b);
+                avgC = recent[Math.floor(recent.length / 2)]; 
+            } else {
+                // Trending: Apply Damped Momentum (25% weight)
+                // This captures shifts without over-reacting to single-month jitter
+                const delta = gaps[0] - gaps[1]; 
+                const dampeningFactor = 0.25; 
+                avgC = Math.round(gaps[0] + (delta * dampeningFactor));
+            }
+        }
+        
+        const avgD = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : 5;
+        document.getElementById('avgCycle').innerText = avgC + " Days"; 
+        document.getElementById('avgDuration').innerText = avgD + " Days";
+        
+        // 4. Establish baseline
+        const last = sorted[0]; 
+        const lastStart = new Date(last.start+"T00:00:00"); 
+        const today = new Date(); 
+        today.setHours(0,0,0,0);
+        
+        let activePeriod = (!last.end);
+        let cycleDay = Math.floor((today - lastStart)/86400000)+1; 
+        
+        let periodDayLength = 1; 
+        if(activePeriod) { 
+            let trackEnd = last.trackedEnd ? new Date(last.trackedEnd+"T00:00:00") : lastStart; 
+            periodDayLength = Math.floor((trackEnd - lastStart)/86400000)+1; 
+        }
+        
+        const nextStart = new Date(lastStart); 
+        nextStart.setDate(lastStart.getDate() + avgC); 
+        
+        if(activePeriod) { currentPhaseKey = 'MENSTRUAL'; } 
+        else if(today >= nextStart) { currentPhaseKey = 'LATE'; } 
+        else { 
+            if(cycleDay <= Math.floor(avgC-16)) currentPhaseKey = 'FOLLICULAR'; 
+            else if(cycleDay <= Math.floor(avgC-12)) currentPhaseKey = 'OVULATORY'; 
+            else currentPhaseKey = 'LUTEAL'; 
+        }
 
-    // 4. Update Header UI
-    const p=PHASES[currentPhaseKey]; 
-    document.getElementById('phaseIcon').innerText=p.icon; 
-    document.getElementById('phaseIcon').style.setProperty('--phase-glow',p.color); 
-    document.getElementById('phaseName').innerText=p.name; 
-    document.getElementById('hormoneMarker').innerHTML=p.hormone+" ⓘ"; 
-    document.getElementById('hormoneMarker').style.setProperty('--phase-glow',p.color);
-    
-    if(activePeriod){ 
-        document.getElementById('countdownDisplay').innerText=`Day ${periodDayLength} of period`; 
-        document.getElementById('startPredLabel').innerText="Current start"; 
-        document.getElementById('nextPeriodDate').innerText=formatDate(last.start); 
-        const estEnd=new Date(lastStart); 
-        estEnd.setDate(lastStart.getDate()+(avgD-1)); 
-        document.getElementById('nextEndDate').innerText=formatDate(estEnd.toISOString().split('T')[0]); 
-    } else { 
-        const nextStart=new Date(lastStart); 
-        nextStart.setDate(lastStart.getDate()+avgC); 
-        document.getElementById('countdownDisplay').innerText=`Next in ${Math.max(0,Math.ceil((nextStart-today)/86400000))} Days`; 
-        document.getElementById('startPredLabel').innerText="Expected next"; 
-        document.getElementById('nextPeriodDate').innerText=formatDate(nextStart.toISOString().split('T')[0]); 
-        const nextEnd=new Date(nextStart); 
-        nextEnd.setDate(nextStart.getDate()+(avgD-1)); 
-        document.getElementById('nextEndDate').innerText=formatDate(nextEnd.toISOString().split('T')[0]); 
-    }
-    
-    // 5. Update Timeline Strip
-    const timelineDiv=document.getElementById('phaseTimeline'); 
-    timelineDiv.innerHTML=''; 
-    const points=[
-        {label:'Menstrual',key:'MENSTRUAL',date:new Date(lastStart)},
-        {label:'Follicular',key:'FOLLICULAR',date:new Date(lastStart.getTime()+avgD*86400000)},
-        {label:'Ovulation',key:'OVULATORY',date:new Date(lastStart.getTime()+Math.max(avgC-14,6)*86400000)},
-        {label:'Luteal',key:'LUTEAL',date:new Date(lastStart.getTime()+Math.max(avgC-10,12)*86400000)},
-        {label:'Next Cycle',key:'NEXT',date:new Date(lastStart.getTime()+avgC*86400000)}
-    ];
-    
-    const phaseOrder=['MENSTRUAL','FOLLICULAR','OVULATORY','LUTEAL','NEXT'];
-    const activeIdx=phaseOrder.indexOf(currentPhaseKey==='LATE'?'NEXT':currentPhaseKey);
-    const phaseBounds={MENSTRUAL:[0,avgD],FOLLICULAR:[avgD,avgC-14],OVULATORY:[avgC-14,avgC-10],LUTEAL:[avgC-10,avgC],NEXT:[avgC,avgC+5]};
-    const [phStart,phEnd]=phaseBounds[currentPhaseKey]||[0,1];
-    
-    // 🛠️ FIX: Use cycleDay for the progress bar calculation too
-    const phaseProgress=Math.min(100,Math.max(0,Math.round(((cycleDay-phStart)/(phEnd-phStart))*100)));
-    
-    points.forEach((pt,i)=>{ 
-        const isActive=(currentPhaseKey===pt.key)||(pt.key==='NEXT'&&currentPhaseKey==='LATE'); 
-        const isPassed=i<activeIdx; 
-        const dotColor=PHASES[pt.key==='NEXT'?'MENSTRUAL':pt.key]?.color||'#00d2ff'; 
-        const progressStyle=isActive?`--phase-progress:${phaseProgress}%;`:''; 
-        timelineDiv.innerHTML+=`<div class="tl-point ${isActive?'active':isPassed?'passed':''}" style="--phase-dot:${dotColor};${progressStyle}"><div class="tl-dot"></div><div class="tl-label">${pt.label}</div><div class="tl-date">${formatDate(pt.date.toISOString().split('T')[0])}</div></div>`; 
-    });
-    
-    // 6. Update History Log
-    document.getElementById('updateBtn').style.display = (!logs[0]?.end && logs.length) ? "block" : "none";
-    logs.forEach(log=>{ 
-        const durDays=log.end ? Math.floor((new Date(log.end)-new Date(log.start))/86400000)+1 : (log.trackedEnd?Math.floor((new Date(log.trackedEnd)-new Date(log.start))/86400000)+1:"Ongoing"); 
-        const row=`<tr><td>${formatDate(log.start)} — ${formatDate(log.end)}</td><td>${durDays}</td><td><span style="color:${log.end?'#aac9ff':'#ff86a8'};">${log.end?'Finished':'Active'}</span></td><td><button class="delete-badge" onclick="deleteEntry(${log.id})">✕ Remove</button></td>`; 
-        tbody.innerHTML+=row; 
-    });
+        // 5. Update UI Dash
+        const p = PHASES[currentPhaseKey]; 
+        document.getElementById('phaseIcon').innerText = p.icon; 
+        document.getElementById('phaseIcon').style.setProperty('--phase-glow', p.color); 
+        document.getElementById('phaseName').innerText = p.name; 
+        document.getElementById('hormoneMarker').innerHTML = p.hormone + " ⓘ"; 
+        document.getElementById('hormoneMarker').style.setProperty('--phase-glow', p.color);
+        
+        if(activePeriod){ 
+            document.getElementById('countdownDisplay').innerText = `Day ${periodDayLength} of period`; 
+            document.getElementById('startPredLabel').innerText = "Current start"; 
+            document.getElementById('nextPeriodDate').innerText = formatDate(last.start); 
+            const estEnd = new Date(lastStart); 
+            estEnd.setDate(lastStart.getDate() + (avgD - 1)); 
+            document.getElementById('nextEndDate').innerText = formatDate(estEnd.toISOString().split('T')[0]); 
+        } else { 
+            document.getElementById('startPredLabel').innerText = "Expected next"; 
+            document.getElementById('nextPeriodDate').innerText = formatDate(nextStart.toISOString().split('T')[0]); 
+            
+            const nextEnd = new Date(nextStart); 
+            nextEnd.setDate(nextStart.getDate() + (avgD - 1)); 
+            document.getElementById('nextEndDate').innerText = formatDate(nextEnd.toISOString().split('T')[0]); 
+
+            const diffDays = Math.ceil((nextStart - today)/86400000);
+            if (diffDays < 0) {
+                document.getElementById('countdownDisplay').innerText = `${Math.abs(diffDays)} Days Late`;
+            } else if (diffDays === 0) {
+                document.getElementById('countdownDisplay').innerText = "Due today";
+            } else {
+                document.getElementById('countdownDisplay').innerText = `Next in ${diffDays} Days`;
+            }
+        }
+        
+        // 6. Visual Timeline
+        const timelineDiv = document.getElementById('phaseTimeline'); 
+        timelineDiv.innerHTML = ''; 
+        const points = [
+            {label:'Menstrual',key:'MENSTRUAL',date:new Date(lastStart)},
+            {label:'Follicular',key:'FOLLICULAR',date:new Date(lastStart.getTime() + avgD*86400000)},
+            {label:'Ovulation',key:'OVULATORY',date:new Date(lastStart.getTime() + Math.max(avgC-14,6)*86400000)},
+            {label:'Luteal',key:'LUTEAL',date:new Date(lastStart.getTime() + Math.max(avgC-10,12)*86400000)},
+            {label:'Next Cycle',key:'NEXT',date:new Date(lastStart.getTime() + avgC*86400000)}
+        ];
+        
+        const phaseOrder = ['MENSTRUAL','FOLLICULAR','OVULATORY','LUTEAL','NEXT'];
+        const activeIdx = phaseOrder.indexOf(currentPhaseKey === 'LATE' ? 'NEXT' : currentPhaseKey);
+        const phaseBounds = {MENSTRUAL:[0,avgD],FOLLICULAR:[avgD,avgC-14],OVULATORY:[avgC-14,avgC-10],LUTEAL:[avgC-10,avgC],NEXT:[avgC,avgC+5]};
+        const [phStart,phEnd] = phaseBounds[currentPhaseKey === 'LATE' ? 'NEXT' : currentPhaseKey] || [0,1];
+        
+        const phaseProgress = Math.min(100,Math.max(0,Math.round(((cycleDay-phStart)/(phEnd-phStart))*100)));
+        
+        points.forEach((pt,i)=>{ 
+            const isActive = (currentPhaseKey === pt.key) || (pt.key === 'NEXT' && currentPhaseKey === 'LATE'); 
+            const isPassed = i < activeIdx; 
+            const dotColor = PHASES[pt.key === 'NEXT' ? 'MENSTRUAL' : pt.key]?.color || '#00d2ff'; 
+            const progressStyle = isActive ? `--phase-progress:${phaseProgress}%;` : ''; 
+            timelineDiv.innerHTML += `<div class="tl-point ${isActive ? 'active' : isPassed ? 'passed' : ''}" style="--phase-dot:${dotColor};${progressStyle}"><div class="tl-dot"></div><div class="tl-label">${pt.label}</div><div class="tl-date">${formatDate(pt.date.toISOString().split('T')[0])}</div></div>`; 
+        });
+        
+        document.getElementById('updateBtn').style.display = (!logs[0]?.end && logs.length) ? "block" : "none";
+        logs.forEach(log => { 
+            const durDays = log.end ? Math.floor((new Date(log.end)-new Date(log.start))/86400000)+1 : (log.trackedEnd ? Math.floor((new Date(log.trackedEnd)-new Date(log.start))/86400000)+1 : "Ongoing"); 
+            const row = `<tr><td>${formatDate(log.start)} — ${formatDate(log.end)}</td><td>${durDays}</td><td><span style="color:${log.end ? '#aac9ff' : '#ff86a8'};">${log.end ? 'Finished' : 'Active'}</span></td><td><button class="delete-badge" onclick="deleteEntry(${log.id})">✕ Remove</button></td></tr>`; 
+            tbody.innerHTML += row; 
+        });
+
+        // ---------- CONFIDENCE METER + EXPECTED RANGE (add inside updateUI) ----------
+const cycleCount = gaps.length;   // 'gaps' is already calculated earlier in updateUI
+let confidenceLevel = { text: "Low", emoji: "🔴", value: "low" };
+let cv = 0;
+
+if (cycleCount >= 2) {
+    const meanGap = gaps.reduce((a,b)=>a+b,0) / gaps.length;
+    const stdGap = Math.sqrt(gaps.reduce((a,b)=>a+Math.pow(b-meanGap,2),0) / gaps.length);
+    cv = stdGap / meanGap;
 }
+
+if (cycleCount === 0) {
+    confidenceLevel = { text: "Insufficient data", emoji: "⚪", value: "none" };
+} else if (cycleCount < 3) {
+    confidenceLevel = { text: "Low", emoji: "🔴", value: "low" };
+} else if (cycleCount >= 5 && cv < 0.07) {
+    confidenceLevel = { text: "High", emoji: "🟢", value: "high" };
+} else if (cycleCount >= 3 && cv < 0.12) {
+    confidenceLevel = { text: "Medium", emoji: "🟡", value: "medium" };
+} else {
+    confidenceLevel = { text: "Low (variable cycles)", emoji: "🔴", value: "low" };
+}
+
+// Expected range: predicted next start (already computed as 'nextStart' in updateUI)
+let earlyDate = new Date(nextStart);
+let lateDate = new Date(nextStart);
+earlyDate.setDate(nextStart.getDate() - 4);   // up to 4 days early
+lateDate.setDate(nextStart.getDate() + 2);    // up to 2 days late
+const rangeString = `${formatShort(earlyDate)} – ${formatShort(lateDate)}`;
+
+const metaDiv = document.getElementById('predictionMeta');
+if (metaDiv) {
+    let confidenceMsg = `<div class="confidence-row">
+        <span class="confidence-badge">📊 Confidence: ${confidenceLevel.emoji} ${confidenceLevel.text}</span>
+        <span class="range-text">🎯 Expected range: ${rangeString}</span>
+    </div>`;
+    let extraNote = `<div class="disclaimer-note">
+        <span>⚠️</span> <strong>Not a miracle worker:</strong> predictions are estimates based on your logged cycles. Based on personal usage, the actual period often starts 2–4 days before or after the date shown. The more data you log, the more reliable the prediction becomes.
+    </div>`;
+    if (cycleCount === 0) {
+        extraNote = `<div class="disclaimer-note"><span>📘</span> Log at least 2–3 cycles to see meaningful predictions. Your body is unique — give it time!</div>`;
+    }
+    metaDiv.innerHTML = confidenceMsg + extraNote;
+    metaDiv.style.setProperty('--phase-glow', p.color);  // p is the current phase object
+}
+    }
 
     function switchView(view) { document.querySelectorAll('.view-pane').forEach(p=>p.classList.remove('active')); document.getElementById(`view-${view}`).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('onclick').includes(`'${view}'`))); if(view==='calendar') renderCalendar(); history.replaceState(null,'',view==='dashboard'?location.pathname:'#'+view); }
     document.getElementById('importBtnTrigger').addEventListener('click',()=>document.getElementById('importFileInput').click()); 
